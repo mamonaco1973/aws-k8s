@@ -22,30 +22,7 @@ resource "aws_instance" "kubectl_instance" {
   }
 }
 
-resource "aws_iam_role" "eks_kubectl_role" {
-  name = "eks-kubectl-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_policy_attachment" "ssm_policy" {
-  name       = "ssm-policy-attachment"
-  roles      = [aws_iam_role.eks_kubectl_role.name]
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
 resource "aws_iam_instance_profile" "eks_kubectl_instance_profile" {
   name = "eks-kubectl-instance-profile"
-  role = aws_iam_role.eks_kubectl_role.name
+  role = aws_iam_role.eks_node_role.name
 }
