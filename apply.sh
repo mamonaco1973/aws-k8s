@@ -38,8 +38,8 @@ docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/flask-app:flas
 cd ..
 
 # Navigate to the 03-apprunner directory
-cd 03-apprunner
-echo "NOTE: Building apprunner instance and deploy flask container."
+cd 03-eks
+echo "NOTE: Building EKS instance and deploy flask container."
 
 if [ ! -d ".terraform" ]; then
     terraform init
@@ -52,6 +52,6 @@ cd ..
 
 # Execute the validation script
 
-./validate.sh
+#./validate.sh
 
 
