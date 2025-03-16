@@ -1,6 +1,6 @@
-cd "03-apprunner"
+cd "03-eks"
 
-echo "NOTE: Destroying app runner instance."
+echo "NOTE: Destroying EKS."
 
 if [ ! -d ".terraform" ]; then
     terraform init
