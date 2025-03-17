@@ -114,3 +114,4 @@ module "load_balancer_controller_irsa" {
   role_policy_arns              = [aws_iam_policy.aws_load_balancer_controller.arn]
   oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:aws-load-balancer-controller"]
 }
+
