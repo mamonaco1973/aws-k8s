@@ -48,6 +48,13 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
     alb.ingress.kubernetes.io/group.name: flask-alb-group
+    alb.ingress.kubernetes.io/healthcheck-path: /gtg              # Custom health check path
+    alb.ingress.kubernetes.io/healthcheck-port: "8000"            # Health check port
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"  # Health check interval
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"    # Health check timeout
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"        # Healthy threshold
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"      # Unhealthy threshold
+    alb.ingress.kubernetes.io/success-codes: "200-499"            # Success HTTP codes
   labels:
     app: flask-app
 spec:
