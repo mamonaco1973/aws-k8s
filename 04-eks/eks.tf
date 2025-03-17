@@ -31,3 +31,72 @@ resource "aws_eks_node_group" "flask_api" {
     aws_iam_role_policy_attachment.ssm_policy
   ]
 }
+
+# Create IAM Role for AWS Load Balancer Controller
+resource "aws_iam_role" "alb_controller" {
+  name = "eks-alb-controller-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = {
+        Federated = aws_eks_cluster.flask_eks.identity[0].oidc[0].issuer
+      },
+      Action = "sts:AssumeRoleWithWebIdentity",
+      Condition = {
+        StringEquals = {
+          "${aws_eks_cluster.flask_eks.identity[0].oidc[0].issuer}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+        }
+      }
+    }]
+  })
+}
+
+# Attach ALB Controller Policy
+resource "aws_iam_role_policy_attachment" "alb_controller_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSLoadBalancerController"
+  role       = aws_iam_role.alb_controller.name
+}
+
+# Create Kubernetes Service Account for ALB Controller
+resource "kubernetes_service_account" "alb_controller" {
+  metadata {
+    name      = "aws-load-balancer-controller"
+    namespace = "kube-system"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.alb_controller.arn
+    }
+  }
+}
+
+# Deploy AWS Load Balancer Controller using Helm
+resource "helm_release" "aws_load_balancer_controller" {
+  name       = "aws-load-balancer-controller"
+  namespace  = "kube-system"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+  version    = "1.4.4"
+
+  set {
+    name  = "clusterName"
+    value = aws_eks_cluster.flask_eks.name
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = kubernetes_service_account.alb_controller.metadata[0].name
+  }
+
+  set {
+    name  = "region"
+    value = "us-east-2"
+  }
+
+  set {
+    name  = "vpcId"
+    value = aws_vpc.k8s_vpc.id
+  }
+
+  depends_on = [kubernetes_service_account.alb_controller]
+}
