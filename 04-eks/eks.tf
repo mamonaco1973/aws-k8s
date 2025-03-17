@@ -10,6 +10,18 @@ resource "aws_eks_cluster" "flask_eks" {
   depends_on = [aws_iam_role_policy_attachment.eks_cluster_policy]
 }
 
+resource "aws_launch_template" "eks_worker_nodes" {
+  name = "eks-worker-nodes"
+
+  metadata_options {
+    http_endpoint = "enabled"  # Enable the metadata service
+    http_tokens   = "required" # Require IMDSv2
+  }
+
+  # Optional: Specify instance type, AMI, etc., if needed
+  instance_type = "t3.medium"
+}
+
 # Create EKS Node Group
 resource "aws_eks_node_group" "flask_api" {
   cluster_name    = aws_eks_cluster.flask_eks.name
@@ -17,6 +29,12 @@ resource "aws_eks_node_group" "flask_api" {
   node_role_arn   = aws_iam_role.eks_node_role.arn
   subnet_ids      = [aws_subnet.k8s-subnet-1.id, aws_subnet.k8s-subnet-2.id]
   instance_types  = ["t3.medium"]
+  
+  # Associate the custom launch template
+  launch_template {
+    id      = aws_launch_template.eks_worker_nodes.id
+    version = aws_launch_template.eks_worker_nodes.latest_version
+  }
 
   scaling_config {
     desired_size = 1
@@ -32,71 +50,3 @@ resource "aws_eks_node_group" "flask_api" {
   ]
 }
 
-# # Create IAM Role for AWS Load Balancer Controller
-# resource "aws_iam_role" "alb_controller" {
-#   name = "eks-alb-controller-role"
-
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17",
-#     Statement = [{
-#       Effect = "Allow",
-#       Principal = {
-#         Federated = aws_eks_cluster.flask_eks.identity[0].oidc[0].issuer
-#       },
-#       Action = "sts:AssumeRoleWithWebIdentity",
-#       Condition = {
-#         StringEquals = {
-#           "${aws_eks_cluster.flask_eks.identity[0].oidc[0].issuer}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
-#         }
-#       }
-#     }]
-#   })
-# }
-
-# # Attach ALB Controller Policy
-# resource "aws_iam_role_policy_attachment" "alb_controller_policy" {
-#   policy_arn = "arn:aws:iam::aws:policy/AWSLoadBalancerController"
-#   role       = aws_iam_role.alb_controller.name
-# }
-
-# # Create Kubernetes Service Account for ALB Controller
-# resource "kubernetes_service_account" "alb_controller" {
-#   metadata {
-#     name      = "aws-load-balancer-controller"
-#     namespace = "kube-system"
-#     annotations = {
-#       "eks.amazonaws.com/role-arn" = aws_iam_role.alb_controller.arn
-#     }
-#   }
-# }
-
-# # Deploy AWS Load Balancer Controller using Helm
-# resource "helm_release" "aws_load_balancer_controller" {
-#   name       = "aws-load-balancer-controller"
-#   namespace  = "kube-system"
-#   repository = "https://aws.github.io/eks-charts"
-#   chart      = "aws-load-balancer-controller"
-#   version    = "1.4.4"
-
-#   set {
-#     name  = "clusterName"
-#     value = aws_eks_cluster.flask_eks.name
-#   }
-
-#   set {
-#     name  = "serviceAccount.name"
-#     value = kubernetes_service_account.alb_controller.metadata[0].name
-#   }
-
-#   set {
-#     name  = "region"
-#     value = "us-east-2"
-#   }
-
-#   set {
-#     name  = "vpcId"
-#     value = aws_vpc.k8s-vpc.id
-#   }
-
-#   depends_on = [kubernetes_service_account.alb_controller]
-# }
