@@ -24,6 +24,7 @@ resource "aws_iam_policy" "aws_load_balancer_controller" {
           "ec2:AuthorizeSecurityGroupIngress",        # Add this
           "ec2:AuthorizeSecurityGroupEgress",         # Add this
           "ec2:DeleteSecurityGroup",                  # Add this
+          "ec2:CreateTags",                           # Add this
           "elasticloadbalancing:DescribeLoadBalancers",
           "elasticloadbalancing:DescribeLoadBalancerAttributes",
           "elasticloadbalancing:DescribeListeners",
