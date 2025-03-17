@@ -38,7 +38,7 @@ docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/flask-app:flas
 cd ..
 
 # Navigate to the 03-apprunner directory
-cd 03-eks
+cd 04-eks
 echo "NOTE: Building EKS instance and deploy flask container."
 
 if [ ! -d ".terraform" ]; then
@@ -49,6 +49,8 @@ terraform apply -auto-approve
 
 # Return to the parent directory
 cd ..
+
+aws eks update-kubeconfig --name flask-eks-cluster --region us-east-2
 
 # Execute the validation script
 
