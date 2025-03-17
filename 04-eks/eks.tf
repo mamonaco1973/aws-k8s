@@ -95,7 +95,7 @@ resource "helm_release" "aws_load_balancer_controller" {
 
   set {
     name  = "vpcId"
-    value = aws_vpc.k8s_vpc.id
+    value = aws_vpc.k8s-vpc.id
   }
 
   depends_on = [kubernetes_service_account.alb_controller]
