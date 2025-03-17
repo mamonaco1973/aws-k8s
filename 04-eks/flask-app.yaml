@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: flask-app
-  labels:
-    app: flask-app
 spec:
   replicas: 2
   selector:
@@ -23,7 +21,13 @@ spec:
           env:
             - name: FLASK_ENV
               value: "production"
-
+          livenessProbe:
+            httpGet:
+              path: /gtg   # Same as ALB health check
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -54,7 +58,7 @@ metadata:
     alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"    # Health check timeout
     alb.ingress.kubernetes.io/healthy-threshold-count: "2"        # Healthy threshold
     alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"      # Unhealthy threshold
-    alb.ingress.kubernetes.io/success-codes: "200-499"            # Success HTTP codes
+    alb.ingress.kubernetes.io/success-codes: "200-310"            # Success HTTP codes
   labels:
     app: flask-app
 spec:
