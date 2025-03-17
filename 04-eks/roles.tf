@@ -1,25 +1,4 @@
 
-# # IAM Role Policy for App Runner to interact with DynamoDB
-# resource "aws_iam_role_policy" "eks_runner_policy" {
-#   name   = "eks-runner-policy"                   # Name of the IAM policy
-#   role   = aws_iam_role.app_runner_run_role.id   # Attach the policy to the previously created IAM role
-#   policy = jsonencode({                          # Inline policy document in JSON format
-#     Version = "2012-10-17",                      # Policy version
-#     Statement = [
-#       {
-#         Action = [                               # List of DynamoDB actions allowed
-#           "dynamodb:Query",                      # Allow querying items in the DynamoDB table
-#           "dynamodb:PutItem",                    # Allow inserting new items into the table
-#           "dynamodb:Scan"                        # Allow scanning the entire table
-#         ],
-#         Effect   = "Allow",                      # Grant the specified actions
-#         Resource = "${aws_dynamodb_table.candidate-table.arn}" # Reference the ARN of the target DynamoDB table
-#       }
-#     ]
-#   })
-# }
-
-
 resource "aws_iam_policy" "dynamodb_access" {
   name        = "DynamoDBAccessPolicy"
   description = "Policy to allow access to DynamoDB"
@@ -99,4 +78,21 @@ resource "aws_iam_role_policy_attachment" "ssm_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+# Configure the Kubernetes provider
+provider "kubernetes" {
+  host                   = aws_eks_cluster.flask_eks.endpoint
+  cluster_ca_certificate = base64decode(aws_eks_cluster.flask_eks.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.flask_eks.token
+}
 
+
+# Create the Kubernetes service account
+resource "kubernetes_service_account" "dynamodb_access_sa" {
+  metadata {
+    name      = "dynamodb-access-sa"
+    namespace = "default"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = module.dynamodb_access_irsa.iam_role_arn
+    }
+  }
+}

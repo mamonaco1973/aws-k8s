@@ -17,9 +17,6 @@ resource "aws_launch_template" "eks_worker_nodes" {
     http_endpoint = "enabled"  # Enable the metadata service
     http_tokens   = "optional" # Require IMDSv2 
   }
-
-  # Optional: Specify instance type, AMI, etc., if needed
-  instance_type = "t3.medium"
 }
 
 # Create EKS Node Group
@@ -58,4 +55,18 @@ module "dynamodb_access_irsa" {
   provider_url                  = replace(aws_eks_cluster.flask_eks.identity[0].oidc[0].issuer, "https://", "")
   role_policy_arns              = [aws_iam_policy.dynamodb_access.arn]
   oidc_fully_qualified_subjects = ["system:serviceaccount:default:dynamodb-access-sa"]
+}
+
+data "tls_certificate" "eks_oidc" {
+  url = aws_eks_cluster.flask_eks.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks_oidc_provider" {
+  url = aws_eks_cluster.flask_eks.identity[0].oidc[0].issuer
+
+  client_id_list = [
+    "sts.amazonaws.com"
+  ]
+
+  thumbprint_list = [data.tls_certificate.eks_oidc.certificates[0].sha1_fingerprint]
 }

@@ -14,6 +14,7 @@ spec:
       labels:
         app: flask-app
     spec:
+      serviceAccountName: dynamodb-access-sa
       containers:
         - name: flask-app
           image: 824622998597.dkr.ecr.us-east-2.amazonaws.com/flask-app:flask-app-rc1
