@@ -1,4 +1,4 @@
-cd "03-eks"
+cd "04-eks"
 
 echo "NOTE: Destroying EKS."
 
