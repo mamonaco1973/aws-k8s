@@ -20,6 +20,10 @@ resource "aws_iam_policy" "aws_load_balancer_controller" {
           "ec2:DescribeTags",
           "ec2:GetCoipPoolUsage",
           "ec2:DescribeCoipPools",
+          "ec2:CreateSecurityGroup",                  # Add this
+          "ec2:AuthorizeSecurityGroupIngress",        # Add this
+          "ec2:AuthorizeSecurityGroupEgress",         # Add this
+          "ec2:DeleteSecurityGroup",                  # Add this
           "elasticloadbalancing:DescribeLoadBalancers",
           "elasticloadbalancing:DescribeLoadBalancerAttributes",
           "elasticloadbalancing:DescribeListeners",
