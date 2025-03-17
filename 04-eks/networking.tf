@@ -43,19 +43,21 @@ resource "aws_subnet" "k8s-subnet-1" {
   availability_zone       = "us-east-2a"             # Specify the availability zone
   
   tags = {
-    Name = "k8s-subnet-1"                             # Assign a name tag for identification
+    Name = "k8s-subnet-1"                            # Assign a name tag for identification
+    "kubernetes.io/role/elb" = "1"                   # Tag for public ALBs
   }
 }
 
 # Define the second public subnet within the VPC
 resource "aws_subnet" "k8s-subnet-2" {
   vpc_id                  = aws_vpc.k8s-vpc.id        # Associate the subnet with the VPC
-  cidr_block              = "10.0.0.64/26"           # Assign a CIDR block (64 IPs, next available range)
-  map_public_ip_on_launch = true                     # Automatically assign public IPs to instances
-  availability_zone       = "us-east-2b"             # Specify a different availability zone for redundancy
+  cidr_block              = "10.0.0.64/26"            # Assign a CIDR block (64 IPs, next available range)
+  map_public_ip_on_launch = true                      # Automatically assign public IPs to instances
+  availability_zone       = "us-east-2b"              # Specify a different availability zone for redundancy
   
   tags = {
     Name = "k8s-subnet-2"                             # Assign a name tag for identification
+    "kubernetes.io/role/elb" = "1"                    # Tag for public ALBs
   }
 }
 
