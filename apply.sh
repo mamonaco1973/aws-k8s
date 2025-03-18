@@ -59,46 +59,6 @@ aws eks update-kubeconfig --name flask-eks-cluster --region us-east-2
 
 kubectl apply -f flask-app.yaml
 
-# Wait until available
-
-# Function to get the ALB DNS name from Kubernetes Ingress
-get_alb_name() {
-  kubectl get ingress flask-app-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null
-}
-
-# Wait for Ingress to be assigned a hostname
-echo "Waiting for Kubernetes Ingress to get an external hostname..."
-while true; do
-  ALB_NAME=$(get_alb_name)
-
-  if [ -n "$ALB_NAME" ]; then
-    echo "Ingress is ready! ALB detected: $ALB_NAME"
-    break
-  fi
-
-  echo "Ingress not ready yet. Waiting 30 seconds..."
-  sleep 30
-done
-
-# Wait for ALB to return HTTP 200 on /gtg
-echo "Waiting for ALB ($ALB_NAME) to return HTTP 200 on /gtg ..."
-
-while true; do
-  HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://$ALB_NAME/gtg")
-
-  if [ "$HTTP_STATUS" -eq 200 ]; then
-    echo "ALB is ready! HTTP 200 received from http://$ALB_NAME/gtg"
-    break
-  fi
-
-  echo "Waiting... ALB returned $HTTP_STATUS. Retrying in 30 seconds..."
-  sleep 30
-done
-
-echo "Application is fully up and running!"
-
-# Execute the validation script
-
-#./validate.sh
+./validate.sh
 
 
