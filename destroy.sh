@@ -15,7 +15,7 @@ if [ ! -d ".terraform" ]; then
 fi
 
 # Destroy EKS resources
-terraform destroy -auto-approve -target=aws_eks_node_group.flask_api -target=aws_eks_cluster.flask_eks -target=helm_release.aws_load_balancer_controller
+#terraform destroy -auto-approve -target=aws_eks_node_group.flask_api -target=aws_eks_cluster.flask_eks -target=helm_release.aws_load_balancer_controller
 terraform destroy -auto-approve || { echo "ERROR: Terraform destroy failed. Exiting."; exit 1; }
 
 # Clean up Terraform-related files
@@ -34,6 +34,7 @@ aws ecr delete-repository --repository-name "$ECR_REPOSITORY_NAME" --force || {
 
 # Navigate to the ECR setup directory and clean up Terraform files
 cd "01-ecr" || { echo "ERROR: Failed to change directory to 01-ecr. Exiting."; exit 1; }
+terraform destroy -auto-approve || { echo "ERROR: Terraform destroy failed. Exiting."; exit 1; }
 rm -rf terraform* .terraform*
 cd ..
 
