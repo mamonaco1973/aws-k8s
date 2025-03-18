@@ -1,27 +1,39 @@
+#!/bin/bash
 
-kubectl delete -f flask-app.yaml
+# Delete Kubernetes deployment
+kubectl delete -f flask-app.yaml || {
+    echo "WARNING: Failed to delete Kubernetes deployment. It may not exist."
+}
 
-cd "04-eks"
+# Navigate to the EKS setup directory and destroy resources
+cd "04-eks" || { echo "ERROR: Failed to change directory to 04-eks. Exiting."; exit 1; }
+echo "NOTE: Destroying EKS cluster."
 
-echo "NOTE: Destroying EKS."
-
+# Initialize Terraform if needed
 if [ ! -d ".terraform" ]; then
     terraform init
 fi
-terraform destroy -auto-approve
-rm -f -r terraform* .terraform*
 
+# Destroy EKS resources
+terraform destroy -auto-approve || { echo "ERROR: Terraform destroy failed. Exiting."; exit 1; }
+
+# Clean up Terraform-related files
+rm -rf terraform* .terraform*
 cd ..
 
 echo "NOTE: Deleting ECR repository contents."
 
+# Define ECR repository name
 ECR_REPOSITORY_NAME="flask-app"
-aws ecr delete-repository --repository-name $ECR_REPOSITORY_NAME --force
 
-cd 01-ecr
-rm -f -r terraform* .terraform*
+# Force delete the ECR repository and its contents
+aws ecr delete-repository --repository-name "$ECR_REPOSITORY_NAME" --force || {
+    echo "WARNING: Failed to delete ECR repository. It may not exist."
+}
+
+# Navigate to the ECR setup directory and clean up Terraform files
+cd "01-ecr" || { echo "ERROR: Failed to change directory to 01-ecr. Exiting."; exit 1; }
+rm -rf terraform* .terraform*
 cd ..
 
-
-
-
+echo "NOTE: Cleanup process completed successfully."

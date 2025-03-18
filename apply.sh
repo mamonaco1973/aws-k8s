@@ -1,64 +1,78 @@
 #!/bin/bash
 
+# Run environment check script
 ./check_env.sh
 if [ $? -ne 0 ]; then
   echo "ERROR: Environment check failed. Exiting."
   exit 1
 fi
 
+# Function to initialize Terraform if not already initialized
+init_terraform() {
+    if [ ! -d ".terraform" ]; then
+        terraform init
+    fi
+}
 
-# Navigate to the 01-ecr directory
-cd "01-ecr" 
+# Navigate to the ECR setup directory and deploy
+cd "01-ecr" || { echo "ERROR: Failed to change directory to 01-ecr"; exit 1; }
 echo "NOTE: Building ECR Instance."
-
-if [ ! -d ".terraform" ]; then
-    terraform init
-fi
+init_terraform
 terraform apply -auto-approve
-
-# Return to the parent directory
 cd ..
 
-# Navigate to the 02-docker directory
+# Navigate to the Docker setup directory and build the container
+cd "02-docker" || { echo "ERROR: Failed to change directory to 02-docker"; exit 1; }
+echo "NOTE: Building Flask container with Docker."
 
-cd "02-docker"
-echo "NOTE: Building flask container with Docker."
-
-# Retrieve the AWS Account ID using the AWS CLI.
+# Retrieve AWS Account ID
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
-
-# Authenticate Docker to AWS ECR using the retrieved credentials.
-aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com
-
-# Build and push the Docker image.
-# The image tag includes the AWS Account ID and the specified repository and tag.
-
-docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/flask-app:flask-app-rc1 . --push
-
-cd ..
-
-# Navigate to the 03-apprunner directory
-cd 04-eks
-echo "NOTE: Building EKS instance and deploy flask container."
-
-if [ ! -d ".terraform" ]; then
-    terraform init
+if [ -z "$AWS_ACCOUNT_ID" ]; then
+    echo "ERROR: Failed to retrieve AWS Account ID. Exiting."
+    exit 1
 fi
 
-terraform apply -auto-approve
-sed "s/\${account_id}/$AWS_ACCOUNT_ID/g" flask-app.yaml.tmpl > ../flask-app.yaml
+# Authenticate Docker to AWS ECR
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com || {
+    echo "ERROR: Docker authentication to ECR failed. Exiting."
+    exit 1
+}
 
-# Return to the parent directory
+# Build and push the Docker image
+IMAGE_TAG="${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/flask-app:flask-app-rc1"
+docker build -t $IMAGE_TAG . || { echo "ERROR: Docker build failed. Exiting."; exit 1; }
+docker push $IMAGE_TAG || { echo "ERROR: Docker push failed. Exiting."; exit 1; }
 cd ..
 
-# Configure kubectl command
+# Navigate to the EKS setup directory and deploy
+cd "04-eks" || { echo "ERROR: Failed to change directory to 04-eks"; exit 1; }
+echo "NOTE: Building EKS instance and deploying Flask container."
+init_terraform
+terraform apply -auto-approve
 
-aws eks update-kubeconfig --name flask-eks-cluster --region us-east-2
+# Replace placeholder in the Kubernetes deployment template
+sed "s/\${account_id}/$AWS_ACCOUNT_ID/g" flask-app.yaml.tmpl > ../flask-app.yaml || {
+    echo "ERROR: Failed to generate Kubernetes deployment file. Exiting."
+    exit 1
+}
+cd ..
 
-# Deploy flask container with kubectl
+# Configure kubectl for EKS cluster
+aws eks update-kubeconfig --name flask-eks-cluster --region us-east-2 || {
+    echo "ERROR: Failed to update kubeconfig for EKS. Exiting."
+    exit 1
+}
 
-kubectl apply -f flask-app.yaml
+# Deploy Flask container to EKS
+kubectl apply -f flask-app.yaml || {
+    echo "ERROR: Failed to deploy to EKS. Exiting."
+    exit 1
+}
 
-./validate.sh
+# Run validation script
+./validate.sh || {
+    echo "ERROR: Validation failed. Exiting."
+    exit 1
+}
 
-
+echo "NOTE: Deployment completed successfully."
