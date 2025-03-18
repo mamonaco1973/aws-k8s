@@ -6,7 +6,7 @@ kubectl delete -f flask-app.yaml || {
 }
 
 # Navigate to the EKS setup directory and destroy resources
-cd "04-eks" || { echo "ERROR: Failed to change directory to 04-eks. Exiting."; exit 1; }
+cd "03-eks" || { echo "ERROR: Failed to change directory to 04-eks. Exiting."; exit 1; }
 echo "NOTE: Destroying EKS cluster."
 
 # Initialize Terraform if needed

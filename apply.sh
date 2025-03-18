@@ -45,7 +45,7 @@ docker push $IMAGE_TAG || { echo "ERROR: Docker push failed. Exiting."; exit 1; 
 cd ..
 
 # Navigate to the EKS setup directory and deploy
-cd "04-eks" || { echo "ERROR: Failed to change directory to 04-eks"; exit 1; }
+cd "03-eks" || { echo "ERROR: Failed to change directory to 03-eks"; exit 1; }
 echo "NOTE: Building EKS instance and deploying Flask container."
 init_terraform
 terraform apply -auto-approve

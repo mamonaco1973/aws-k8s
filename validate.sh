@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo ""
+echo "NOTE: Validating EKS Solution."
+echo ""
 # Function to retrieve the ALB DNS name from Kubernetes Ingress
 get_alb_name() {
   kubectl get ingress flask-app-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null
