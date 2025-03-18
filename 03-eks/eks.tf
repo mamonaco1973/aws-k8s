@@ -23,8 +23,13 @@ resource "aws_launch_template" "eks_worker_nodes" {
     http_tokens   = "optional" # Allow IMDSv2 but do not enforce it 
   }  
 
-  tags = {
-    Name = "eks-worker-node-flask-api"                # Assign a name tag for identification
+  # Define tags for instances launched from this template
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = {
+      Name = "eks-worker-node-flask-api"
+    }
   }
 }
 
