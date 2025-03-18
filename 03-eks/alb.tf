@@ -1,3 +1,6 @@
+### AWS IAM Policy for Load Balancer Controller
+### This policy grants permissions for AWS Load Balancer Controller to manage resources like ELBs, security groups, WAF, ACM, and IAM.
+
 resource "aws_iam_policy" "aws_load_balancer_controller" {
   name        = "AWSLoadBalancerControllerIAMPolicy"
   description = "Policy for the AWS Load Balancer Controller"
@@ -20,14 +23,14 @@ resource "aws_iam_policy" "aws_load_balancer_controller" {
           "ec2:DescribeTags",
           "ec2:GetCoipPoolUsage",
           "ec2:DescribeCoipPools",
-          "ec2:CreateSecurityGroup",                  # Add this
-          "ec2:AuthorizeSecurityGroupIngress",        # Add this
-          "ec2:AuthorizeSecurityGroupEgress",         # Add this
-          "ec2:DeleteSecurityGroup",                  # Add this
-          "ec2:CreateTags",                           # Add this
+          "ec2:CreateSecurityGroup",                  
+          "ec2:AuthorizeSecurityGroupIngress",        
+          "ec2:AuthorizeSecurityGroupEgress",         
+          "ec2:DeleteSecurityGroup",                  
+          "ec2:CreateTags",                           
           "ec2:RevokeSecurityGroupIngress",
           "ec2:AuthorizeSecurityGroupIngress",
-          "elasticloadbalancing:DescribeListenerAttributes",  # Add this
+          "elasticloadbalancing:DescribeListenerAttributes",  
           "elasticloadbalancing:DescribeLoadBalancers",
           "elasticloadbalancing:DescribeLoadBalancerAttributes",
           "elasticloadbalancing:DescribeListeners",
@@ -109,13 +112,19 @@ resource "aws_iam_policy" "aws_load_balancer_controller" {
   })
 }
 
+### IAM Role for AWS Load Balancer Controller (IRSA for EKS)
+### This module creates an IAM role that can be assumed by an EKS service account
+
 module "load_balancer_controller_irsa" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
+  source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"  # Reusable IAM module for OIDC roles
 
-  create_role                   = true
-  role_name                     = "aws-load-balancer-controller"
-  provider_url                  = replace(aws_eks_cluster.flask_eks.identity[0].oidc[0].issuer, "https://", "")
-  role_policy_arns              = [aws_iam_policy.aws_load_balancer_controller.arn]
-  oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:aws-load-balancer-controller"]
+  create_role  = true                                                                           # Enable role creation
+  role_name    = "aws-load-balancer-controller"  # IAM Role name
+  provider_url = replace(aws_eks_cluster.flask_eks.identity[0].oidc[0].issuer, "https://", "")  # OIDC provider URL
+  role_policy_arns = [aws_iam_policy.aws_load_balancer_controller.arn]                          # Attach the IAM policy created above
+
+  # Define which Kubernetes service account can assume this role
+  oidc_fully_qualified_subjects = [
+    "system:serviceaccount:kube-system:aws-load-balancer-controller"
+  ]
 }
-
