@@ -1,3 +1,6 @@
+
+kubectl delete -f flask-app.yaml
+
 cd "04-eks"
 
 echo "NOTE: Destroying EKS."
