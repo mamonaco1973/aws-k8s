@@ -41,7 +41,7 @@ resource "aws_eks_node_group" "flask_api" {
   node_group_name = "flask-api"                                              # Define the name of the node group
   node_role_arn   = aws_iam_role.eks_node_role.arn                           # Attach the IAM role for worker nodes
   subnet_ids      = [aws_subnet.k8s-subnet-1.id, aws_subnet.k8s-subnet-2.id] # Deploy worker nodes in specified subnets
-  instance_types  = ["t3.medium"]                                            # Choose the instance type for worker nodes
+  instance_types  = ["t2.small"]                                             # Choose the instance type for worker nodes
 
   # Use the previously defined launch template for worker node configuration
   launch_template {

@@ -184,7 +184,7 @@ resource "aws_iam_instance_profile" "ecs_instance_profile" {
 resource "aws_launch_template" "ecs_lt" {
   name          = "ecs-launch-template"
   image_id      = "ami-0e3b2096ff08f7b38"
-  instance_type = "t2.micro"
+  instance_type = "t2.small"
   user_data     = base64encode("#!/bin/bash\necho ECS_CLUSTER=ecs-cluster >> /etc/ecs/ecs.config")
 
   iam_instance_profile {
@@ -201,11 +201,14 @@ resource "aws_launch_template" "ecs_lt" {
       encrypted             = true
     }
   }
+  # Define tags for instances launched from this template
+  tag_specifications {
+    resource_type = "instance"
 
-  tags = {
-    Name = "ecs-worker-node-flask-api"                # Assign a name tag for identification
-   }
-
+    tags = {
+      Name = "eks-worker-node-flask-api"
+    }
+  }
   network_interfaces {
     associate_public_ip_address = true
     delete_on_termination       = true
