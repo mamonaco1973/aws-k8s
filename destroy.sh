@@ -15,6 +15,7 @@ if [ ! -d ".terraform" ]; then
 fi
 
 # Destroy EKS resources
+terraform destroy -auto-approve -target=aws_eks_node_group.flask_api -target=aws_eks_cluster.flask_eks -target=helm_release.aws_load_balancer_controller
 terraform destroy -auto-approve || { echo "ERROR: Terraform destroy failed. Exiting."; exit 1; }
 
 # Clean up Terraform-related files
