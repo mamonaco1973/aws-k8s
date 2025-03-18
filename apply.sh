@@ -69,6 +69,9 @@ kubectl apply -f flask-app.yaml || {
     exit 1
 }
 
+echo ""
+echo "NOTE: Validating Solutions"
+
 # Run validation script
 ./validate.sh || {
     echo "ERROR: Validation failed. Exiting."
