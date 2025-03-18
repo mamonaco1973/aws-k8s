@@ -41,7 +41,7 @@ resource "helm_release" "aws_load_balancer_controller" {
   # Annotate the service account with the IAM role ARN for AWS permissions
   
   set {
-    name  = "serviceAccount.annotations.eks\.amazonaws\.com/role-arn"
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = module.load_balancer_controller_irsa.iam_role_arn  # Attach IAM role for ALB controller to assume necessary permissions
   }
 
