@@ -6,7 +6,8 @@ resource "aws_eks_cluster" "flask_eks" {
   role_arn = aws_iam_role.eks_cluster_role.arn  # Attach the IAM role for EKS management
 
   vpc_config {
-    subnet_ids = [aws_subnet.k8s-subnet-1.id, aws_subnet.k8s-subnet-2.id]  # Specify the subnets where the EKS cluster will be deployed
+    subnet_ids = [data.aws_subnet.k8s-subnet-1.id, 
+                  data.aws_subnet.k8s-subnet-2.id]  # Specify the subnets where the EKS cluster will be deployed
   }
 
   depends_on = [aws_iam_role_policy_attachment.eks_cluster_policy]         # Ensure IAM policies are attached before creating the cluster
@@ -40,7 +41,8 @@ resource "aws_eks_node_group" "flask_api" {
   cluster_name    = aws_eks_cluster.flask_eks.name                           # Associate the node group with the specified EKS cluster
   node_group_name = "flask-api"                                              # Define the name of the node group
   node_role_arn   = aws_iam_role.eks_node_role.arn                           # Attach the IAM role for worker nodes
-  subnet_ids      = [aws_subnet.k8s-subnet-1.id, aws_subnet.k8s-subnet-2.id] # Deploy worker nodes in specified subnets
+  subnet_ids      = [data.aws_subnet.k8s-subnet-1.id, 
+                     data.aws_subnet.k8s-subnet-2.id]                        # Deploy worker nodes in specified subnets
   instance_types  = ["t2.small"]                                             # Choose the instance type for worker nodes
 
   # Use the previously defined launch template for worker node configuration
