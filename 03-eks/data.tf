@@ -35,6 +35,6 @@ data "aws_subnet" "k8s-subnet-2" {
   # FILTER: Define the criteria for selecting the subnet.
   filter {
     name = "tag:Name"                  # Use the "Name" tag to identify the subnet.
-    values = ["k8s-subnet-1"]          # Match the tag value for the desired subnet.
+    values = ["k8s-subnet-2"]          # Match the tag value for the desired subnet.
   }
 }
