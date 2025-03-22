@@ -89,8 +89,8 @@ resource "helm_release" "cluster_autoscaler" {
     value = "least-waste"
   }
 
- set {
-  name  = "extraArgs.node-group-auto-discovery"
-  value = "'asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/flask-eks-cluster'"
+  set_string {
+    name  = "extraArgs.node-group-auto-discovery"
+    value = "asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/flask-eks-cluster"
   }
 }
