@@ -120,16 +120,15 @@ resource "aws_iam_role" "cluster_autoscaler" {
       {
         Effect = "Allow",
         Principal = {
-          Federated = module.eks.oidc_provider_arn
+          Federated = aws_iam_openid_connect_provider.main.arn
         },
         Action = "sts:AssumeRoleWithWebIdentity",
         Condition = {
           StringEquals = {
-            "${module.eks.oidc_provider_url}:sub" = "system:serviceaccount:kube-system:cluster-autoscaler"
+            "${replace(aws_iam_openid_connect_provider.main.url, "https://", "")}:sub" = "system:serviceaccount:kube-system:cluster-autoscaler"
           }
         }
       }
     ]
   })
 }
-
