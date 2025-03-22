@@ -52,9 +52,9 @@ resource "aws_eks_node_group" "flask_api" {
   }
 
   scaling_config {
-    desired_size = 2  # Set the desired number of worker nodes (scale accordingly)
-    max_size     = 2  # Maximum number of worker nodes allowed (increase for scaling needs)
-    min_size     = 2  # Minimum number of worker nodes (ensure redundancy if needed)
+    desired_size = 1  # Set the desired number of worker nodes (scale accordingly)
+    max_size     = 1  # Maximum number of worker nodes allowed (increase for scaling needs)
+    min_size     = 4  # Minimum number of worker nodes (ensure redundancy if needed)
   }
 
   depends_on = [
