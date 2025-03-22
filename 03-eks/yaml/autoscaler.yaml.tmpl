@@ -1,0 +1,38 @@
+# =============================================================
+# Cluster Autoscaler Configuration (values.yaml override)
+# Used with Helm to deploy the AWS Cluster Autoscaler
+# =============================================================
+
+autoDiscovery:
+  clusterName: ${cluster_name}  # Dynamically inject the name of the EKS cluster
+                                # Enables the autoscaler to discover Auto Scaling Groups (ASGs)
+                                # based on specific AWS EC2 tags tied to this cluster
+
+awsRegion: us-east-2            # AWS region where the EKS cluster and ASGs reside
+                                # Must match the region of your ASG and EKS control plane
+
+rbac:
+  serviceAccount:
+    create: false               # Do NOT create a new service account (already pre-created externally)
+    name: cluster-autoscaler    # Use an existing service account with the correct IAM role attached
+                                # Required for IRSA (IAM Roles for Service Accounts) to work
+
+extraArgs:
+  balance-similar-node-groups: "true"
+  # Automatically rebalances Pods across node groups with similar instance types
+  # Useful if one group is overutilized while others are underused
+
+  skip-nodes-with-system-pods: "false"
+  # Allow the autoscaler to consider nodes even if they run critical system Pods
+  # Setting this to "true" avoids terminating nodes with kube-system workloads
+
+  expander: least-waste
+  # Choose the most resource-efficient node group to scale up
+  # Other options: random, most-pods, priority (least-waste minimizes unused capacity)
+
+  node-group-auto-discovery: asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/${cluster_name}
+  # Enable auto-discovery of ASGs via specific EC2 tags
+  # Tag format:
+  #   k8s.io/cluster-autoscaler/enabled                         = true
+  #   k8s.io/cluster-autoscaler/${cluster_name}                = true
+  # These tags must be present on ASGs for the autoscaler to manage them

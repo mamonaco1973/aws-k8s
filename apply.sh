@@ -51,7 +51,7 @@ init_terraform
 terraform apply -auto-approve
 
 # Replace placeholder in the Kubernetes deployment template
-sed "s/\${account_id}/$AWS_ACCOUNT_ID/g" flask-app.yaml.tmpl > ../flask-app.yaml || {
+sed "s/\${account_id}/$AWS_ACCOUNT_ID/g" yaml/flask-app.yaml.tmpl > ../flask-app.yaml || {
     echo "ERROR: Failed to generate Kubernetes deployment file. Exiting."
     exit 1
 }

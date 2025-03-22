@@ -46,7 +46,7 @@ resource "helm_release" "aws_load_balancer_controller" {
   # Installed into kube-system namespace – standard for core components
 
   values = [
-    templatefile("${path.module}/aws-load-balancer.yaml.tmpl", {
+    templatefile("${path.module}/yaml/aws-load-balancer.yaml.tmpl", {
       cluster_name = aws_eks_cluster.flask_eks.name
       # The EKS cluster name passed as a template variable – used in the Helm chart's config
 
@@ -82,7 +82,7 @@ resource "helm_release" "cluster_autoscaler" {
   # Explicit chart version to ensure reproducibility and avoid unplanned upgrades
 
   values = [
-    templatefile("${path.module}/autoscaler.yaml.tmpl", {
+    templatefile("${path.module}/yaml/autoscaler.yaml.tmpl", {
       cluster_name = aws_eks_cluster.flask_eks.name
       # Cluster name used in the configuration to target the correct node groups for scaling
     })
