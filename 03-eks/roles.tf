@@ -88,19 +88,25 @@ resource "aws_iam_role_policy_attachment" "ssm_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"  # Allows EC2 instances to use AWS Systems Manager
 }
 
-data "aws_iam_policy_document" "cluster_autoscaler_policy" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "autoscaling:DescribeAutoScalingGroups",
-      "autoscaling:DescribeAutoScalingInstances",
-      "autoscaling:DescribeLaunchConfigurations",
-      "autoscaling:SetDesiredCapacity",
-      "autoscaling:TerminateInstanceInAutoScalingGroup",
-      "ec2:DescribeLaunchTemplateVersions",
-      "autoscaling:DescribeTags"
+resource "aws_iam_policy" "cluster_autoscaler" {
+  name        = "EKSClusterAutoscalerPolicy"
+  description = "Permissions for EKS Cluster Autoscaler to manage ASGs"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = [
+          "autoscaling:DescribeAutoScalingGroups",
+          "autoscaling:DescribeAutoScalingInstances",
+          "autoscaling:DescribeLaunchConfigurations",
+          "autoscaling:DescribeTags",
+          "autoscaling:SetDesiredCapacity",
+          "autoscaling:TerminateInstanceInAutoScalingGroup",
+          "ec2:DescribeLaunchTemplateVersions"
+        ],
+        Resource = "*"
+      }
     ]
-    resources = ["*"]
-  }
+  })
 }
-
