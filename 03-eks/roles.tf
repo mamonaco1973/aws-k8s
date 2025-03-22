@@ -88,24 +88,3 @@ resource "aws_iam_role_policy_attachment" "ssm_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"  # Allows EC2 instances to use AWS Systems Manager
 }
 
-# =============================================
-# Kubernetes Provider Configuration
-# =============================================
-provider "kubernetes" {
-  host                   = aws_eks_cluster.flask_eks.endpoint                                     # Use EKS cluster API endpoint
-  cluster_ca_certificate = base64decode(aws_eks_cluster.flask_eks.certificate_authority[0].data)  # Decode CA certificate
-  token                  = data.aws_eks_cluster_auth.flask_eks.token                              # Use token authentication for EKS API
-}
-
-# =======================================================
-# Create a Kubernetes Service Account for DynamoDB Access
-# =======================================================
-resource "kubernetes_service_account" "dynamodb_access_sa" {
-  metadata {
-    name      = "dynamodb-access-sa"  # Name of the Kubernetes service account
-    namespace = "default"             # Namespace where the service account will be created
-    annotations = {
-      "eks.amazonaws.com/role-arn" = module.dynamodb_access_irsa.iam_role_arn  # Attach IAM role via IRSA
-    }
-  }
-}
