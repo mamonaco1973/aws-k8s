@@ -88,10 +88,9 @@ resource "helm_release" "cluster_autoscaler" {
     name  = "extraArgs.expander"
     value = "least-waste"
   }
-  
-  # ✅ This is the missing piece — enables ASG discovery by tag
-  set {
+
+ set {
     name  = "extraArgs.node-group-auto-discovery"
-    value = "asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/flask-eks-cluster"
+    value = "\"asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/flask-eks-cluster\""
   }
 }
