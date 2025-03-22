@@ -46,3 +46,46 @@ resource "helm_release" "aws_load_balancer_controller" {
   }
 
 }
+
+resource "helm_release" "cluster_autoscaler" {
+  name       = "cluster-autoscaler"
+  repository = "https://kubernetes.github.io/autoscaler"
+  chart      = "cluster-autoscaler"
+  namespace  = "kube-system"
+  version    = "9.29.1" # or latest stable version
+
+  set {
+    name  = "autoDiscovery.clusterName"
+    value = "flask-eks-cluster" # match your cluster name exactly
+  }
+
+  set {
+    name  = "awsRegion"
+    value = "us-east-2" # adjust to your AWS region
+  }
+
+  set {
+    name  = "rbac.serviceAccount.create"
+    value = "false"
+  }
+
+  set {
+    name  = "rbac.serviceAccount.name"
+    value = kubernetes_service_account.cluster_autoscaler.metadata[0].name
+  }
+
+  set {
+    name  = "extraArgs.balance-similar-node-groups"
+    value = "true"
+  }
+
+  set {
+    name  = "extraArgs.skip-nodes-with-system-pods"
+    value = "false"
+  }
+
+  set {
+    name  = "extraArgs.expander"
+    value = "least-waste"
+  }
+}
