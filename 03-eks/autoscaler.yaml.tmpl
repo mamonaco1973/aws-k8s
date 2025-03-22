@@ -1,5 +1,5 @@
 autoDiscovery:
-  clusterName: flask-eks-cluster
+  clusterName: ${cluster_name}
 
 awsRegion: us-east-2
 
@@ -12,4 +12,4 @@ extraArgs:
   balance-similar-node-groups: "true"
   skip-nodes-with-system-pods: "false"
   expander: least-waste
-  node-group-auto-discovery: asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/flask-eks-cluster
+  node-group-auto-discovery: asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/${cluster_name}

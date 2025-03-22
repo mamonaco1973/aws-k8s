@@ -23,28 +23,13 @@ resource "helm_release" "aws_load_balancer_controller" {
   repository = "https://aws.github.io/eks-charts"  # Specify the Helm chart repository URL
   chart      = "aws-load-balancer-controller"      # Define the Helm chart name to be installed
   namespace  = "kube-system"                       # Deploy the controller in the "kube-system" namespace for cluster-wide use
-
-  # Set the EKS cluster name in the Helm values
-
-  set {
-    name  = "clusterName"
-    value = aws_eks_cluster.flask_eks.name         # Pass the cluster name as a Helm chart parameter
-  }
-
-  # Configure the service account name for the controller
   
-  set {
-    name  = "serviceAccount.name"
-    value = "aws-load-balancer-controller"         # Use a dedicated service account for ALB controller
-  }
-
-  # Annotate the service account with the IAM role ARN for AWS permissions
-  
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = module.load_balancer_controller_irsa.iam_role_arn  # Attach IAM role for ALB controller to assume necessary permissions
-  }
-
+  values = [
+    templatefile("${path.module}/aws-load-balancer.yaml.tmpl", {
+      cluster_name = aws_eks_cluster.flask_eks.name
+      role_arn     = module.load_balancer_controller_irsa.iam_role_arn
+    })
+  ]
 }
 
 resource "helm_release" "cluster_autoscaler" {
@@ -53,5 +38,9 @@ resource "helm_release" "cluster_autoscaler" {
   chart      = "cluster-autoscaler"
   namespace  = "kube-system"
   version    = "9.29.1" # or latest stable version
-  values     = [file("./autoscaler.yaml")]
+  values = [
+    templatefile("${path.module}/autoscaler.yaml.tmpl", {
+      cluster_name = aws_eks_cluster.flask_eks.name
+    })
+  ]
 }
