@@ -39,9 +39,9 @@ resource "aws_iam_role" "eks_cluster_role" {
   })
 }
 
-# =============================================
+# ================================================
 # Attach Managed AWS Policies to EKS Cluster Role
-# =============================================
+# ================================================
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_cluster_role.name  # Attach policy to EKS cluster IAM role
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"  # Predefined AWS policy for EKS clusters
@@ -97,9 +97,9 @@ provider "kubernetes" {
   token                  = data.aws_eks_cluster_auth.flask_eks.token                              # Use token authentication for EKS API
 }
 
-# =============================================
+# =======================================================
 # Create a Kubernetes Service Account for DynamoDB Access
-# =============================================
+# =======================================================
 resource "kubernetes_service_account" "dynamodb_access_sa" {
   metadata {
     name      = "dynamodb-access-sa"  # Name of the Kubernetes service account
