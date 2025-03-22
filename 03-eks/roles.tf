@@ -88,29 +88,6 @@ resource "aws_iam_role_policy_attachment" "ssm_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"  # Allows EC2 instances to use AWS Systems Manager
 }
 
-resource "aws_iam_policy" "cluster_autoscaler" {
-  name        = "EKSClusterAutoscalerPolicy"
-  description = "Permissions for EKS Cluster Autoscaler to manage ASGs"
-  policy      = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect   = "Allow",
-        Action   = [
-          "autoscaling:DescribeAutoScalingGroups",
-          "autoscaling:DescribeAutoScalingInstances",
-          "autoscaling:DescribeLaunchConfigurations",
-          "autoscaling:DescribeTags",
-          "autoscaling:SetDesiredCapacity",
-          "autoscaling:TerminateInstanceInAutoScalingGroup",
-          "ec2:DescribeLaunchTemplateVersions"
-        ],
-        Resource = "*"
-      }
-    ]
-  })
-}
-
 resource "aws_iam_role" "cluster_autoscaler" {
   name = "EKSClusterAutoscalerRole"
 
@@ -120,15 +97,16 @@ resource "aws_iam_role" "cluster_autoscaler" {
       {
         Effect = "Allow",
         Principal = {
-          Federated = aws_iam_openid_connect_provider.main.arn
+          Federated = module.eks.oidc_provider_arn
         },
         Action = "sts:AssumeRoleWithWebIdentity",
         Condition = {
           StringEquals = {
-            "${replace(aws_iam_openid_connect_provider.main.url, "https://", "")}:sub" = "system:serviceaccount:kube-system:cluster-autoscaler"
+            "${replace(module.eks.oidc_provider_url, "https://", "")}:sub" = "system:serviceaccount:kube-system:cluster-autoscaler"
           }
         }
       }
     ]
   })
 }
+
