@@ -1,95 +1,136 @@
-apiVersion: apps/v1
-kind: Deployment
+# =============================================================
+# Deployment: flask-app (Python Web App on Port 8000)
+# =============================================================
+apiVersion: apps/v1                   # API group for managing Deployments
+kind: Deployment                      # Declares a Kubernetes Deployment resource
 metadata:
-  name: flask-app
+  name: flask-app                     # Name of the Deployment object
+
 spec:
-  replicas: 2
+  replicas: 2                         # Start with 2 replicas (pods) of the Flask app
+
   selector:
     matchLabels:
-      app: flask-app
+      app: flask-app                  # Match Pods with the label app=flask-app
+
   template:
     metadata:
       labels:
-        app: flask-app
+        app: flask-app                # Label applied to each Pod for selection by Service and HPA
+
     spec:
-      serviceAccountName: dynamodb-access-sa
+      serviceAccountName: dynamodb-access-sa  # Use a specific service account for IAM access to DynamoDB
+
       containers:
-        - name: flask-app
+        - name: flask-app                       # Container name within the Pod
           image: ${account_id}.dkr.ecr.us-east-2.amazonaws.com/flask-app:flask-app-rc1
+                                                # Pull the image from Amazon ECR using a release candidate tag
+
           ports:
-            - containerPort: 8000
+            - containerPort: 8000               # Expose port 8000 (Flask app default)
+
           env:
             - name: FLASK_ENV
-              value: "production"
+              value: "production"               # Set the environment variable for production mode
+
           livenessProbe:
             httpGet:
-              path: /gtg   # Same as ALB health check
-              port: 8000
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            failureThreshold: 3
+              path: /gtg                        # Health check endpoint (same as ALB health check)
+              port: 8000                        # Target port inside container
+            initialDelaySeconds: 5              # Delay before the first check after startup
+            periodSeconds: 10                   # Frequency of health checks
+            failureThreshold: 3                 # Pod is considered unhealthy after 3 consecutive failures
+
 ---
+# =============================================================
+# Service: flask-app-service (Exposes Flask app via NodePort)
+# =============================================================
 apiVersion: v1
 kind: Service
 metadata:
-  name: flask-app-service
+  name: flask-app-service             # Name of the Service resource
+
 spec:
   selector:
-    app: flask-app
+    app: flask-app                    # Route traffic to Pods with label app=flask-app
+
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8000
-  type: NodePort
+    - protocol: TCP                  # Use TCP protocol for HTTP traffic
+      port: 80                       # External port (clients connect here)
+      targetPort: 8000              # Forward traffic to container port 8000
+
+  type: NodePort                    # Expose service on a random high port across all cluster nodes
 
 ---
+# =============================================================
+# Ingress: flask-app-ingress (ALB Ingress via AWS Load Balancer Controller)
+# =============================================================
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: flask-app-ingress
+  name: flask-app-ingress            # Name of the Ingress resource
+
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
+    # ALB will be publicly accessible
+
     alb.ingress.kubernetes.io/target-type: ip
+    # ALB targets will be Pod IPs directly (not NodePort or Instance)
+
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    # Configure ALB to listen on port 80 for HTTP traffic
+
     alb.ingress.kubernetes.io/group.name: flask-alb-group
-    alb.ingress.kubernetes.io/healthcheck-path: /gtg              # Custom health check path
-    alb.ingress.kubernetes.io/healthcheck-port: "8000"            # Health check port
-    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"  # Health check interval
-    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"    # Health check timeout
-    alb.ingress.kubernetes.io/healthy-threshold-count: "2"        # Healthy threshold
-    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"      # Unhealthy threshold
-    alb.ingress.kubernetes.io/success-codes: "200-310"            # Success HTTP codes
+    # Logical group for sharing the ALB among multiple ingress resources (optional, for consolidation)
+
+    alb.ingress.kubernetes.io/healthcheck-path: /gtg
+    alb.ingress.kubernetes.io/healthcheck-port: "8000"
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/success-codes: "200-310"
+    # Define custom health check behavior for ALB to monitor Pod health via the /gtg path on port 8000
+
   labels:
-    app: flask-app
+    app: flask-app                    # Optional: metadata label for visibility or selector logic
+
 spec:
-  ingressClassName: alb
+  ingressClassName: alb              # Use AWS ALB ingress controller (installed in the cluster)
+
   rules:
     - http:
         paths:
-          - path: /
-            pathType: Prefix
+          - path: /                  # Match all paths (root + subpaths)
+            pathType: Prefix         # Match everything that starts with "/"
             backend:
               service:
-                name: flask-app-service
+                name: flask-app-service  # Route requests to this service
                 port:
-                  number: 80
+                  number: 80             # Use service port 80 to forward traffic
+
 ---
+# =============================================================
+# Horizontal Pod Autoscaler: flask-app-hpa
+# =============================================================
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: flask-app-hpa
+  name: flask-app-hpa                # Name of the HPA resource
+
 spec:
   scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: flask-app
-  minReplicas: 2
-  maxReplicas: 5
+    apiVersion: apps/v1             # Target the Deployment API group
+    kind: Deployment                # Type of resource to scale
+    name: flask-app                 # Target the "flask-app" Deployment for scaling
+
+  minReplicas: 2                    # Minimum number of pods to maintain
+  maxReplicas: 5                    # Maximum number of pods that can be created based on load
+
   metrics:
     - type: Resource
       resource:
         name: cpu
         target:
-          type: Utilization
-          averageUtilization: 60
-
+          type: Utilization         # Target CPU utilization metric
+          averageUtilization: 60    # Target average CPU usage at 60% before scaling up
