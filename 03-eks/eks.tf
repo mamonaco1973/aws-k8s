@@ -64,18 +64,10 @@ resource "aws_eks_node_group" "flask_api" {
     aws_iam_role_policy_attachment.ssm_policy               # Enable access to AWS Systems Manager for logging and monitoring
   ]
 
-    tags = [
-    {
-      key                 = "k8s.io/cluster-autoscaler/enabled"
-      value               = "true"
-      propagate_at_launch = true
-    },
-    {
-      key                 = "k8s.io/cluster-autoscaler/flask-eks-cluster"
-      value               = "owned"
-      propagate_at_launch = true
-    }
-  ]
+  tags = {
+    "k8s.io/cluster-autoscaler/enabled"                    = "true"
+    "k8s.io/cluster-autoscaler/flask-eks-cluster"          = "owned"
+  }
 }
 
 # Create an IAM Role for DynamoDB Access using IAM Roles for Service Accounts (IRSA)
