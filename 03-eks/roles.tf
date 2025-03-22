@@ -104,7 +104,3 @@ data "aws_iam_policy_document" "cluster_autoscaler_policy" {
   }
 }
 
-resource "aws_iam_policy" "cluster_autoscaler" {
-  name   = "EKSClusterAutoscalerPolicy"
-  policy = data.aws_iam_policy_document.cluster_autoscaler_policy.json
-}
