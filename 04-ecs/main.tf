@@ -228,9 +228,9 @@ resource "aws_autoscaling_group" "ecs_asg" {
     version = "$Latest"
   }
 
-  min_size            = 2
-  max_size            = 2
-  desired_capacity    = 2
+  min_size            = 1
+  max_size            = 4
+  desired_capacity    = 1
   vpc_zone_identifier = [data.aws_subnet.k8s-subnet-1.id, data.aws_subnet.k8s-subnet-2.id]
 
   name = "ecs-cluster-asg"
