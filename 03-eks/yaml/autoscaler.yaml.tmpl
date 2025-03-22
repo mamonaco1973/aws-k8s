@@ -19,20 +19,13 @@ rbac:
 
 extraArgs:
   balance-similar-node-groups: "true"
-  # Automatically rebalances Pods across node groups with similar instance types
-  # Useful if one group is overutilized while others are underused
-
   skip-nodes-with-system-pods: "false"
-  # Allow the autoscaler to consider nodes even if they run critical system Pods
-  # Setting this to "true" avoids terminating nodes with kube-system workloads
-
   expander: least-waste
-  # Choose the most resource-efficient node group to scale up
-  # Other options: random, most-pods, priority (least-waste minimizes unused capacity)
-
   node-group-auto-discovery: asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/${cluster_name}
-  # Enable auto-discovery of ASGs via specific EC2 tags
-  # Tag format:
-  #   k8s.io/cluster-autoscaler/enabled                         = true
-  #   k8s.io/cluster-autoscaler/${cluster_name}                = true
-  # These tags must be present on ASGs for the autoscaler to manage them
+
+  # 🔽 Scale-down behavior tuning
+  scale-down-enabled: "true"
+  scale-down-unneeded-time: "1m"              # Time a node must be unneeded before it's eligible for scale down
+  scale-down-delay-after-delete: "1m"         # Delay after pod deletion before scale-down is triggered
+  scale-down-delay-after-failure: "1m"        # Delay after scale-down failure before retry
+  scale-down-utilization-threshold: "0.5"     # Nodes with utilization below this are considered unneeded
