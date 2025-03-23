@@ -68,6 +68,10 @@ resource "aws_eks_node_group" "flask_api" {
     "k8s.io/cluster-autoscaler/enabled"                    = "true"
     "k8s.io/cluster-autoscaler/flask-eks-cluster"          = "owned"
   }
+
+  labels = {
+    nodegroup = "flask-nodes"
+  }
 }
 
 # Create an IAM Role for DynamoDB Access using IAM Roles for Service Accounts (IRSA)

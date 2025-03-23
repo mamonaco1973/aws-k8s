@@ -21,6 +21,9 @@ spec:
         app: stress         # Apply the `app=stress` label to Pods so they match the Deployment selector
 
     spec:
+      nodeSelector:
+        nodegroup: flask-nodes            # <-- Only schedule on nodes labeled with this key/value
+
       containers:
         - name: stress                    # Name of the container inside the Pod
           image: vish/stress              # Docker image to use — `vish/stress` generates synthetic CPU load

@@ -21,6 +21,9 @@ spec:
     spec:
       serviceAccountName: dynamodb-access-sa  # Use a specific service account for IAM access to DynamoDB
 
+      nodeSelector:
+        nodegroup: flask-nodes                  # <-- Only schedule on nodes with this label
+        
       containers:
         - name: flask-app                       # Container name within the Pod
           image: ${account_id}.dkr.ecr.us-east-2.amazonaws.com/flask-app:flask-app-rc1
