@@ -23,11 +23,9 @@ candidates_app = Flask(__name__)
 @candidates_app.route('/', methods=['GET'])
 def default():
     """
-    Default endpoint to return an error response for invalid requests.
-    Returns:
-        JSON: Status message with HTTP 400.
+    Default endpoint to return a 200 for nginx
     """
-    return {"status": "invalid request"}, 400
+    return Response(status=200)
 
 # Health check endpoint ("go to green")
 @candidates_app.route('/gtg', methods=['GET'])
