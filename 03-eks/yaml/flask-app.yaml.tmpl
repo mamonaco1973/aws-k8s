@@ -46,7 +46,7 @@ spec:
 
 ---
 # =============================================================
-# Service: flask-app-service (Exposes Flask app via NodePort)
+# Service: flask-app-service 
 # =============================================================
 apiVersion: v1
 kind: Service
@@ -61,57 +61,31 @@ spec:
     - protocol: TCP                  # Use TCP protocol for HTTP traffic
       port: 80                       # External port (clients connect here)
       targetPort: 8000              # Forward traffic to container port 8000
-
-  type: NodePort                    # Expose service on a random high port across all cluster nodes
-
 ---
 # =============================================================
-# Ingress: flask-app-ingress (ALB Ingress via AWS Load Balancer Controller)
+# Ingress: flask-app-ingress (Uses nginx)
 # =============================================================
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: flask-app-ingress            # Name of the Ingress resource
+  name: flask-app-ingress
 
   annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    # ALB will be publicly accessible
-
-    alb.ingress.kubernetes.io/target-type: ip
-    # ALB targets will be Pod IPs directly (not NodePort or Instance)
-
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
-    # Configure ALB to listen on port 80 for HTTP traffic
-
-    alb.ingress.kubernetes.io/group.name: flask-alb-group
-    # Logical group for sharing the ALB among multiple ingress resources (optional, for consolidation)
-
-    alb.ingress.kubernetes.io/healthcheck-path: /gtg
-    alb.ingress.kubernetes.io/healthcheck-port: "8000"
-    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
-    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
-    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
-    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
-    alb.ingress.kubernetes.io/success-codes: "200-310"
-    # Define custom health check behavior for ALB to monitor Pod health via the /gtg path on port 8000
-
-  labels:
-    app: flask-app                    # Optional: metadata label for visibility or selector logic
+    nginx.ingress.kubernetes.io/rewrite-target: /
 
 spec:
-  ingressClassName: alb              # Use AWS ALB ingress controller (installed in the cluster)
+  ingressClassName: nginx
 
   rules:
     - http:
         paths:
-          - path: /                  # Match all paths (root + subpaths)
-            pathType: Prefix         # Match everything that starts with "/"
+          - path: /
+            pathType: Prefix
             backend:
               service:
-                name: flask-app-service  # Route requests to this service
+                name: flask-app-service
                 port:
-                  number: 80             # Use service port 80 to forward traffic
-
+                  number: 80
 ---
 # =============================================================
 # Horizontal Pod Autoscaler: flask-app-hpa

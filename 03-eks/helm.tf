@@ -89,3 +89,25 @@ resource "helm_release" "cluster_autoscaler" {
   ]
   # Injects custom values (like cluster name) from a template YAML file to configure the autoscaler chart
 }
+
+resource "helm_release" "nginx_ingress" {
+  name       = "nginx-ingress"
+  namespace  = "ingress-nginx"
+  repository = "https://kubernetes.github.io/ingress-nginx"
+  chart      = "ingress-nginx"
+  version    = "4.10.1"  # Use the latest stable version or lock to one you prefer
+
+  create_namespace = true
+
+  values = [
+    <<-EOF
+    controller:
+      ingressClassResource:
+        name: nginx
+        enabled: true
+        default: false
+      service:
+        type: LoadBalancer
+    EOF
+  ]
+}
