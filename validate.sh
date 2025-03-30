@@ -4,7 +4,7 @@ if aws eks describe-cluster --name flask-eks-cluster > /dev/null 2>&1; then
   echo "NOTE: Testing the EKS Solution."
 else
   echo "ERROR: EKS Cluster does not exist."
-  exit 1
+  exit 1 
 fi
 
 # Function to retrieve the ALB DNS name from Kubernetes Ingress
@@ -15,7 +15,7 @@ get_alb_name() {
 # Wait until Kubernetes Ingress has an assigned hostname
 while true; do
   ALB_NAME=$(get_alb_name)
-  
+
   if [ -n "$ALB_NAME" ]; then
     break
   fi
