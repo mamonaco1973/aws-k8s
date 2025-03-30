@@ -113,12 +113,15 @@ resource "helm_release" "nginx_ingress" {
   # Automatically creates the 'ingress-nginx' namespace if it doesn't exist
 
   values = [
-    <<-EOF
-    controller:
-      service:
-        annotations:
-          service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-    EOF
+    yamlencode({
+      controller = {
+        service = {
+          annotations = {
+            "service.beta.kubernetes.io/aws-load-balancer-scheme" = "internet-facing"
+          }
+        }
+      }
+    })
   ]
   # Custom values block for configuring the service as an internet-facing AWS Load Balancer
 }

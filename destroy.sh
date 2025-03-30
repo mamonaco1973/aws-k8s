@@ -6,6 +6,8 @@ kubectl delete -f flask-app.yaml || {
     echo "WARNING: Failed to delete Kubernetes deployment. It may not exist."
 }
 
+helm uninstall nginx-ingress -n ingress-nginx
+
 # Navigate to the EKS setup directory and destroy resources
 cd "03-eks" || { echo "ERROR: Failed to change directory to 04-eks. Exiting."; exit 1; }
 echo "NOTE: Destroying EKS cluster."
