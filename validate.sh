@@ -15,7 +15,7 @@ get_alb_name() {
 # Wait until Kubernetes Ingress has an assigned hostname
 while true; do
   ALB_NAME=$(get_alb_name)
-  
+
   if [ -n "$ALB_NAME" ]; then
     break
   fi

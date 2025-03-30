@@ -90,24 +90,37 @@ resource "helm_release" "cluster_autoscaler" {
   # Injects custom values (like cluster name) from a template YAML file to configure the autoscaler chart
 }
 
+################################################################################
+# Deploy NGINX Ingress Controller with Helm                                    #
+# Provides an HTTP(S) load balancer and reverse proxy for Kubernetes services.#
+# Required for routing external traffic to in-cluster services using Ingress. #
+################################################################################
+
 resource "helm_release" "nginx_ingress" {
   name       = "nginx-ingress"
+  # Helm release name shown in cluster metadata
+
   namespace  = "ingress-nginx"
+  # Deployed into its own namespace to isolate ingress controller resources
+
   repository = "https://kubernetes.github.io/ingress-nginx"
+  # Official ingress-nginx Helm chart repository
+
   chart      = "ingress-nginx"
-  version    = "4.10.1"  # Use the latest stable version or lock to one you prefer
+  # Chart name for deploying the ingress controller
 
   create_namespace = true
+  # Automatically creates the 'ingress-nginx' namespace if it doesn't exist
 
   values = [
     <<-EOF
     controller:
-      ingressClassResource:
-        name: nginx
-        enabled: true
-        default: false
       service:
-        type: LoadBalancer
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
     EOF
   ]
+  # Custom values block for configuring the service as an internet-facing AWS Load Balancer
 }
+
+

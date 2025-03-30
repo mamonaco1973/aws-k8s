@@ -37,14 +37,14 @@ resource "aws_route" "default_route" {
 
 # Define the first public subnet within the VPC
 resource "aws_subnet" "k8s-subnet-1" {
-  vpc_id                  = aws_vpc.k8s-vpc.id        # Associate the subnet with the VPC
+  vpc_id                  = aws_vpc.k8s-vpc.id       # Associate the subnet with the VPC
   cidr_block              = "10.0.0.0/26"            # Assign a CIDR block (64 IPs)
   map_public_ip_on_launch = true                     # Automatically assign public IPs to instances
   availability_zone       = "us-east-2a"             # Specify the availability zone
   
   tags = {
     Name = "k8s-subnet-1"                            # Assign a name tag for identification
-    "kubernetes.io/role/elb" = "1"                   # Tag for public ALBs
+    "kubernetes.io/role/elb" = "1"                   # Tag for public ALB
   }
 }
 
