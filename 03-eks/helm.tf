@@ -97,6 +97,9 @@ resource "helm_release" "cluster_autoscaler" {
 ################################################################################
 
 resource "helm_release" "nginx_ingress" {
+
+  depends_on = [helm_release.aws_load_balancer_controller]
+
   name       = "nginx-ingress"
   # Helm release name shown in cluster metadata
 
@@ -112,17 +115,7 @@ resource "helm_release" "nginx_ingress" {
   create_namespace = true
   # Automatically creates the 'ingress-nginx' namespace if it doesn't exist
 
-  values = [
-    yamlencode({
-      controller = {
-        service = {
-          annotations = {
-            "service.beta.kubernetes.io/aws-load-balancer-scheme" = "internet-facing"
-          }
-        }
-      }
-    })
-  ]
-  # Custom values block for configuring the service as an internet-facing AWS Load Balancer
+  values = [file("${path.module}/yaml/nginx-values.yaml")]
+  # Load custom Helm chart values from external YAML file for better readability
 }
 
