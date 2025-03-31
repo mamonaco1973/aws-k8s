@@ -42,7 +42,7 @@ cd "02-docker" || { echo "ERROR: Failed to change directory to 02-docker"; exit 
 
 # Define the service URL
 SERVICE_URL="http://$ALB_NAME/flask-app/api"
-echo "NOTE: URL for EKS Solution is $SERVICE_URL/flask-app/api/gtg?details=true"
+echo "NOTE: URL for EKS Solution is $SERVICE_URL/gtg?details=true"
 
 # Run the test script
 ./test_candidates.py "$SERVICE_URL" || { echo "ERROR: Application test failed. Exiting."; exit 1; }

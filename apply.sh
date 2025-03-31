@@ -45,12 +45,6 @@ docker build -t $IMAGE_TAG . || { echo "ERROR: Docker build failed. Exiting."; e
 docker push $IMAGE_TAG || { echo "ERROR: Docker push failed. Exiting."; exit 1; }
 cd ..
 
-IMAGE_TAG="${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/games:tic-tac-toe-rc1"
-cd tic-tac-toe
-docker build -t $IMAGE_TAG . || { echo "ERROR: Docker build failed. Exiting."; exit 1; }
-docker push $IMAGE_TAG || { echo "ERROR: Docker push failed. Exiting."; exit 1; }
-cd ..
-
 IMAGE_TAG="${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/games:tetris-rc1"
 cd tetris
 docker build -t $IMAGE_TAG . || { echo "ERROR: Docker build failed. Exiting."; exit 1; }
@@ -85,7 +79,7 @@ sed "s/\${account_id}/$AWS_ACCOUNT_ID/g" yaml/flask-app.yaml.tmpl > ../flask-app
 }
 
 # Replace placeholder in the Kubernetes deployment template
-sed "s/\${account_id}/$AWS_ACCOUNT_ID/g" yaml/tic-tac-toe.yaml.tmpl > ../tic-tac-toe.yaml || {
+sed "s/\${account_id}/$AWS_ACCOUNT_ID/g" yaml/games.yaml.tmpl > ../games.yaml || {
     echo "ERROR: Failed to generate Kubernetes deployment file. Exiting."
     exit 1
 }
@@ -106,7 +100,7 @@ kubectl apply -f flask-app.yaml || {
 
 
 # Deploy tic-tac-toe container to EKS
-kubectl apply -f tic-tac-toe.yaml || {
+kubectl apply -f games.yaml || {
     echo "ERROR: Failed to deploy to EKS. Exiting."
     exit 1
 }
