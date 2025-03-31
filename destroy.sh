@@ -25,6 +25,28 @@ terraform destroy -auto-approve || { echo "ERROR: Terraform destroy failed. Exit
 rm -rf terraform* .terraform*
 cd ..
 
+# Get list of all security group IDs where the GroupName starts with "k8s"
+group_ids=$(aws ec2 describe-security-groups \
+  --query "SecurityGroups[?starts_with(GroupName, 'k8s')].GroupId" \
+  --output text)
+
+if [ -z "$group_ids" ]; then
+  echo "NOTE: No security groups starting with 'k8s' found."
+  exit 0
+fi
+
+# Loop through each group ID and attempt deletion
+for group_id in $group_ids; do
+  echo "NOTE: Deleting security group: $group_id"
+  aws ec2 delete-security-group --group-id "$group_id"
+
+  if [ $? -eq 0 ]; then
+    echo "NOTE: Successfully deleted $group_id"
+  else
+    echo "WARNING: Failed to delete $group_id — possibly still in use"
+  fi
+done
+
 echo "NOTE: Deleting ECR repository contents."
 
 # Define ECR repository name
