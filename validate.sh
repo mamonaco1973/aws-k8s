@@ -27,7 +27,7 @@ done
 # Wait for ALB to return HTTP 200 on /gtg
 
 while true; do
-  HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://$ALB_NAME/gtg")
+  HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://$ALB_NAME/flask-app/api/gtg")
   
   if [ "$HTTP_STATUS" -eq 200 ]; then
     break
@@ -41,8 +41,8 @@ done
 cd "02-docker" || { echo "ERROR: Failed to change directory to 02-docker"; exit 1; }
 
 # Define the service URL
-SERVICE_URL="http://$ALB_NAME"
-echo "NOTE: URL for EKS Solution is $SERVICE_URL/gtg?details=true"
+SERVICE_URL="http://$ALB_NAME/flask-app/api"
+echo "NOTE: URL for EKS Solution is $SERVICE_URL/flask-app/api/gtg?details=true"
 
 # Run the test script
 ./test_candidates.py "$SERVICE_URL" || { echo "ERROR: Application test failed. Exiting."; exit 1; }
