@@ -5,3 +5,5 @@
 *.terraform.*
 *.tf.template
 flask-app.yaml
+tic-tac-toe.yaml
+

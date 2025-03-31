@@ -23,7 +23,7 @@ spec:
 
       nodeSelector:
         nodegroup: flask-nodes                  # <-- Only schedule on nodes with this label
-        
+
       containers:
         - name: flask-app                       # Container name within the Pod
           image: ${account_id}.dkr.ecr.us-east-2.amazonaws.com/flask-app:flask-app-rc1
@@ -31,10 +31,6 @@ spec:
 
           ports:
             - containerPort: 8000               # Expose port 8000 (Flask app default)
-
-          env:
-            - name: FLASK_ENV
-              value: "production"               # Set the environment variable for production mode
 
           livenessProbe:
             httpGet:
@@ -44,9 +40,17 @@ spec:
             periodSeconds: 10                   # Frequency of health checks
             failureThreshold: 3                 # Pod is considered unhealthy after 3 consecutive failures
 
+          readinessProbe:                       # Ensures traffic only hits ready pods
+            httpGet:
+              path: /gtg                        # Same endpoint as livenessProbe (checks app + dependencies)
+              port: 8000                        # Target port inside container
+            initialDelaySeconds: 2              # Shorter delay than liveness (assumes readiness is faster)
+            periodSeconds: 5                    # Check every 5 seconds (more frequent than liveness)
+            failureThreshold: 1                 # Immediately mark as "not ready" on failure
+
 ---
 # =============================================================
-# Service: flask-app-service 
+# Service: flask-app-service
 # =============================================================
 apiVersion: v1
 kind: Service
@@ -61,6 +65,7 @@ spec:
     - protocol: TCP                  # Use TCP protocol for HTTP traffic
       port: 80                       # External port (clients connect here)
       targetPort: 8000              # Forward traffic to container port 8000
+
 ---
 # =============================================================
 # Ingress: flask-app-ingress (Uses nginx)
@@ -83,6 +88,7 @@ spec:
                 name: flask-app-service
                 port:
                   number: 80
+
 ---
 # =============================================================
 # Horizontal Pod Autoscaler: flask-app-hpa

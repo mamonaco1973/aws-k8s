@@ -38,10 +38,19 @@ aws ecr get-login-password --region us-east-2 | docker login --username AWS --pa
     exit 1
 }
 
-# Build and push the Docker image
+# Build and push the Docker images
 IMAGE_TAG="${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/flask-app:flask-app-rc1"
+cd flask-app
 docker build -t $IMAGE_TAG . || { echo "ERROR: Docker build failed. Exiting."; exit 1; }
 docker push $IMAGE_TAG || { echo "ERROR: Docker push failed. Exiting."; exit 1; }
+cd ..
+
+IMAGE_TAG="${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/games:tic-tac-toe-rc1"
+cd tic-tac-toe
+docker build -t $IMAGE_TAG . || { echo "ERROR: Docker build failed. Exiting."; exit 1; }
+docker push $IMAGE_TAG || { echo "ERROR: Docker push failed. Exiting."; exit 1; }
+cd ..
+
 cd ..
 
 # Navigate to the EKS setup directory and deploy
