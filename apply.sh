@@ -51,11 +51,30 @@ docker build -t $IMAGE_TAG . || { echo "ERROR: Docker build failed. Exiting."; e
 docker push $IMAGE_TAG || { echo "ERROR: Docker push failed. Exiting."; exit 1; }
 cd ..
 
+IMAGE_TAG="${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/games:tetris-rc1"
+cd tetris
+docker build -t $IMAGE_TAG . || { echo "ERROR: Docker build failed. Exiting."; exit 1; }
+docker push $IMAGE_TAG || { echo "ERROR: Docker push failed. Exiting."; exit 1; }
+cd ..
+
+
+IMAGE_TAG="${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/games:breakout-rc1"
+cd breakout
+docker build -t $IMAGE_TAG . || { echo "ERROR: Docker build failed. Exiting."; exit 1; }
+docker push $IMAGE_TAG || { echo "ERROR: Docker push failed. Exiting."; exit 1; }
+cd ..
+
+IMAGE_TAG="${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/games:frogger-rc1"
+cd frogger
+docker build -t $IMAGE_TAG . || { echo "ERROR: Docker build failed. Exiting."; exit 1; }
+docker push $IMAGE_TAG || { echo "ERROR: Docker push failed. Exiting."; exit 1; }
+cd ..
+
 cd ..
 
 # Navigate to the EKS setup directory and deploy
 cd "03-eks" || { echo "ERROR: Failed to change directory to 03-eks"; exit 1; }
-echo "NOTE: Building EKS instance and deploying Flask container."
+echo "NOTE: Building EKS instance."
 init_terraform
 terraform apply -auto-approve
 
