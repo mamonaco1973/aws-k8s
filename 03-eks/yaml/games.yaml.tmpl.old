@@ -7,7 +7,6 @@ kind: Namespace
 metadata:
   name: games
 
----
 # ========================================================
 # Tetris Deployment
 # Manages the pod lifecycle for the game application
@@ -16,19 +15,23 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tetris  # Unique identifier for this deployment
-  namespace: games
+
 spec:
   replicas: 1  # Run exactly one instance of the game pod
+
   selector:  # Links the deployment to pods with these labels
     matchLabels:
       app: tetris
+
   template:  # Blueprint for creating new pods
     metadata:
       labels:
         app: tetris  # Must match selector.matchLabels
+
     spec:
       nodeSelector:  # Constrains pods to nodes with this label
         nodegroup: game-nodes
+
       containers:
         - name: tetris  # Container name (visible in logs/dashboard)
           image: ${account_id}.dkr.ecr.us-east-2.amazonaws.com/games:tetris-rc1  # ECR image location
@@ -44,10 +47,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: tetris-service  # DNS name for internal cluster access
-  namespace: games
+
 spec:
   selector:  # Routes traffic to pods with this label
     app: tetris
+
   ports:
     - protocol: TCP  # Standard protocol for HTTP traffic
       port: 80  # External service port
@@ -62,7 +66,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: tetris-ingress
-  namespace: games
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
@@ -85,7 +88,6 @@ spec:
                 name: tetris-service
                 port:
                   number: 80
-
 ---
 # ========================================================
 # Frogger Deployment
@@ -95,19 +97,23 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frogger  # Unique identifier for this deployment
-  namespace: games
+
 spec:
   replicas: 1  # Run exactly one instance of the game pod
+
   selector:  # Links the deployment to pods with these labels
     matchLabels:
       app: frogger
+
   template:  # Blueprint for creating new pods
     metadata:
       labels:
         app: frogger  # Must match selector.matchLabels
+
     spec:
       nodeSelector:  # Constrains pods to nodes with this label
         nodegroup: game-nodes
+
       containers:
         - name: frogger  # Container name (visible in logs/dashboard)
           image: ${account_id}.dkr.ecr.us-east-2.amazonaws.com/games:frogger-rc1  # ECR image location
@@ -123,10 +129,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: frogger-service  # DNS name for internal cluster access
-  namespace: games
+
 spec:
   selector:  # Routes traffic to pods with this label
     app: frogger
+
   ports:
     - protocol: TCP  # Standard protocol for HTTP traffic
       port: 80  # External service port
@@ -141,7 +148,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: frogger-ingress
-  namespace: games
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
@@ -165,7 +171,6 @@ spec:
                 port:
                   number: 80
 
----
 # ========================================================
 # Breakout Deployment
 # Manages the pod lifecycle for the game application
@@ -174,19 +179,23 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: breakout  # Unique identifier for this deployment
-  namespace: games
+
 spec:
   replicas: 1  # Run exactly one instance of the game pod
+
   selector:  # Links the deployment to pods with these labels
     matchLabels:
       app: breakout
+
   template:  # Blueprint for creating new pods
     metadata:
       labels:
         app: breakout  # Must match selector.matchLabels
+
     spec:
       nodeSelector:  # Constrains pods to nodes with this label
         nodegroup: game-nodes
+
       containers:
         - name: breakout  # Container name (visible in logs/dashboard)
           image: ${account_id}.dkr.ecr.us-east-2.amazonaws.com/games:breakout-rc1  # ECR image location
@@ -202,10 +211,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: breakout-service  # DNS name for internal cluster access
-  namespace: games
+
 spec:
   selector:  # Routes traffic to pods with this label
     app: breakout
+
   ports:
     - protocol: TCP  # Standard protocol for HTTP traffic
       port: 80  # External service port
@@ -220,7 +230,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: breakout-ingress
-  namespace: games
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
