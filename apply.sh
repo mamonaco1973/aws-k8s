@@ -64,6 +64,13 @@ sed "s/\${account_id}/$AWS_ACCOUNT_ID/g" yaml/flask-app.yaml.tmpl > ../flask-app
     echo "ERROR: Failed to generate Kubernetes deployment file. Exiting."
     exit 1
 }
+
+# Replace placeholder in the Kubernetes deployment template
+sed "s/\${account_id}/$AWS_ACCOUNT_ID/g" yaml/tic-tac-toe.yaml.tmpl > ../tic-tac-toe.yaml || {
+    echo "ERROR: Failed to generate Kubernetes deployment file. Exiting."
+    exit 1
+}
+
 cd ..
 
 # Configure kubectl for EKS cluster
@@ -74,6 +81,13 @@ aws eks update-kubeconfig --name flask-eks-cluster --region us-east-2 || {
 
 # Deploy Flask container to EKS
 kubectl apply -f flask-app.yaml || {
+    echo "ERROR: Failed to deploy to EKS. Exiting."
+    exit 1
+}
+
+
+# Deploy tic-tac-toe container to EKS
+kubectl apply -f tic-tac-toe.yaml || {
     echo "ERROR: Failed to deploy to EKS. Exiting."
     exit 1
 }
