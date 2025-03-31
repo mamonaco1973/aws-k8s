@@ -74,6 +74,67 @@ resource "aws_eks_node_group" "flask_api" {
   }
 }
 
+
+# Define a Launch Template for EKS Worker Nodes
+# This template configures metadata options for security purposes
+
+resource "aws_launch_template" "extra_nodes" {
+  name = "extra-nodes"    # Assign a name to the launch template
+
+  metadata_options {
+    http_endpoint = "enabled"  # Enable the instance metadata service (IMDS)
+    http_tokens   = "optional" # Allow IMDSv2 but do not enforce it 
+  }  
+
+  # Define tags for instances launched from this template
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = {
+      Name = "extra-nodes"
+    }
+  }
+}
+# Create an EKS Node Group
+# This provisions worker nodes in the EKS cluster and assigns the necessary IAM role
+
+resource "aws_eks_node_group" "extra" {
+  cluster_name    = aws_eks_cluster.flask_eks.name                           # Associate the node group with the specified EKS cluster
+  node_group_name = "extra"                                                  # Define the name of the node group
+  node_role_arn   = aws_iam_role.eks_node_role.arn                           # Attach the IAM role for worker nodes
+  subnet_ids      = [data.aws_subnet.k8s-private-subnet-1.id, 
+                     data.aws_subnet.k8s-private-subnet-2.id]                        # Deploy worker nodes in specified subnets
+  instance_types  = ["t3.medium"]                                            # Choose the instance type for worker nodes
+
+  # Use the previously defined launch template for worker node configuration
+  launch_template {
+    id      = aws_launch_template.extra_nodes.id              # Reference the launch template ID
+    version = aws_launch_template.extra_nodes.latest_version  # Always use the latest launch template version
+  }
+
+  scaling_config {
+    desired_size = 1  # Set the desired number of worker nodes (scale accordingly)
+    max_size     = 1  # Maximum number of worker nodes allowed (increase for scaling needs)
+    min_size     = 1  # Minimum number of worker nodes (ensure redundancy if needed)
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.eks_worker_node_policy,  # Ensure the node IAM role has required permissions
+    aws_iam_role_policy_attachment.eks_cni_policy,          # Attach policy for EKS networking (CNI)
+    aws_iam_role_policy_attachment.eks_registry_policy,     # Allow worker nodes to pull images from ECR
+    aws_iam_role_policy_attachment.ssm_policy               # Enable access to AWS Systems Manager for logging and monitoring
+  ]
+
+  tags = {
+    "k8s.io/cluster-autoscaler/enabled"                    = "true"
+    "k8s.io/cluster-autoscaler/flask-eks-cluster"          = "owned"
+  }
+
+  labels = {
+    nodegroup = "extra-nodes"
+  }
+}
+
 # Create an IAM Role for DynamoDB Access using IAM Roles for Service Accounts (IRSA)
 
 module "dynamodb_access_irsa" {
