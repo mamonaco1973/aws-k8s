@@ -11,6 +11,7 @@ RUN apt update -y && \
 # Copy application files to the /tetris directory in the container
 COPY index.html /frogger                       
 COPY start.sh /frogger
+RUN chmod +x /frogger/start.sh
 
 # Expose port 8000 for HTTP server
 EXPOSE 8000                                         

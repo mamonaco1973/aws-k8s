@@ -11,6 +11,7 @@ RUN apt update -y && \
 # Copy application files to the /tetris directory in the container
 COPY index.html /breakout                       
 COPY start.sh /breakout
+RUN chmod +x /breakout/start.sh
 
 # Expose port 8000 for HTTP server
 EXPOSE 8000                                         
