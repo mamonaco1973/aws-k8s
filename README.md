@@ -175,6 +175,8 @@ The build process is organized into four phases:
 
 ## Tour of Build Output in the AWS Console
 
+![consoles](./diagrams/consoles.gif)
+
 ## Service Endpoint Summary
 
 ### `/flask-app/api/gtg` (GET)
