@@ -1,6 +1,8 @@
 # Containerizing Applications with Amazon EKS (Elastic Kubernetes Service)
 
-**This video complements the [AWS AutoScaling](https://github.com/mamonaco1973/aws-flask-asg/blob/main/README.md) and the [Simple AWS Containers](https://github.com/mamonaco1973/aws-flask-container/blob/main/README.md) projects**, where we deployed a simple Python-based microservice using the Flask framework across different cloud platforms.
+Welcome to **Video 1** of the [Kubernetes In the Cloud](https://github.com/mamonaco1973/cloud-k8s-intro/blob/main/README.md) series.
+
+**This video complements the [AWS AutoScaling](https://github.com/mamonaco1973/aws-flask-asg/blob/main/README.md) and the [Simple AWS Containers](https://github.com/mamonaco1973/aws-flask-container/blob/main/README.md) projects**, where we deployed a simple Python-based microservice using the Flask framework with different cloud services.
 
 This is a **fully automated deployment** of containerized microservices and web apps with **Amazon EKS (Elastic Kubernetes Service)** — powered by Terraform and shell scripting.
 
