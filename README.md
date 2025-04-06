@@ -184,8 +184,8 @@ The build process is organized into four phases:
 #### 4. Deploy Applications Using `kubectl`
 - Connects `kubectl` to the newly created EKS cluster.
 - Applies Kubernetes manifests:
-  - `flask-app.yaml` for the microservice
-  - `games.yaml` for the game containers
+  - [flask-app.yaml](./03-eks/yaml/flask-app.yaml.tmpl) for the microservice  
+  - [games.yaml](./03-eks/yaml/games.yaml.tmpl) for the game containers
 
 ## Tour of Build Output in the AWS Console
 
