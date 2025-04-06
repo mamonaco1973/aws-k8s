@@ -84,7 +84,19 @@ Amazon EKS uses **resource tagging** extensively to manage cluster components:
 - Tags on EC2 instances help the Kubernetes autoscaler track and scale node groups.
 - Tags on ELBs and security groups tie resources back to the cluster.
 
-You rarely touch these tags yourself — but they’re essential for EKS to
+You rarely touch these tags yourself — but they’re essential for EKS to operate in a cloud-native, automated way.
+
+---
+
+### Conclusion
+
+**Amazon EKS delivers a managed Kubernetes experience that blends PaaS simplicity with IaaS flexibility**:
+
+- You don’t install or manage the control plane.
+- You define infrastructure declaratively.
+- AWS provisions and maintains the underlying EC2-based compute.
+
+Compared to fully abstracted services like **AWS RDS** or **Managed Microsoft AD**, EKS strikes a balance — offering control when you need it, and automation when you don’t.
 
 ## AWS Solution
 
