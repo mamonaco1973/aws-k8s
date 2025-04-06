@@ -2,7 +2,7 @@
 
 **This video complements the [AWS AutoScaling](https://github.com/mamonaco1973/aws-flask-asg/blob/main/README.md) and the [Simple AWS Containers](https://github.com/mamonaco1973/aws-flask-container/blob/main/README.md) projects**, where we deployed a simple Python-based microservice using the Flask framework across different cloud platforms.
 
-This is a **fully automated deployment** of containerized microservices and web apps on **Amazon Web Services (AWS)** — powered by infrastructure-as-code and cloud-native tooling.
+This is a **fully automated deployment** of containerized microservices and web apps with **Amazon EKS (Elastic Kubernetes Service)** — powered by Terraform and shell scripting.
 
 You'll build and deploy:
 
@@ -128,14 +128,25 @@ If this is your first time watching our content, we recommend starting with this
 
 ```bash
 git clone https://github.com/mamonaco1973/aws-k8s.git
-cd aws-k8s.git
+cd aws-k8s
 ```
 ## Build the Code
 
 Run [check_env](check_env.sh) then run [apply](apply.sh).
 
 ```bash
-
+OTE: Validating that required commands are found in your PATH.
+NOTE: aws is found in the current PATH.
+NOTE: docker is found in the current PATH.
+NOTE: terraform is found in the current PATH.
+NOTE: All required commands are available.
+NOTE: Checking AWS cli connection.
+NOTE: Successfully logged into AWS.
+NOTE: Building ECR Instance.
+Initializing the backend...
+Initializing provider plugins...
+- Finding latest version of hashicorp/aws...
+- Installing hashicorp/aws v5.94.1...
 [...]
 ```
 
