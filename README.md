@@ -149,7 +149,8 @@ cd aws-k8s
 Run [check_env](check_env.sh) then run [apply](apply.sh).
 
 ```bash
-OTE: Validating that required commands are found in your PATH.
+~/aws-k8s$ ./apply.sh
+NOTE: Validating that required commands are found in your PATH.
 NOTE: aws is found in the current PATH.
 NOTE: docker is found in the current PATH.
 NOTE: terraform is found in the current PATH.
@@ -160,7 +161,6 @@ NOTE: Building ECR Instance.
 Initializing the backend...
 Initializing provider plugins...
 - Finding latest version of hashicorp/aws...
-- Installing hashicorp/aws v5.94.1...
 [...]
 ```
 
