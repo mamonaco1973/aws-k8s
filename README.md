@@ -48,16 +48,6 @@ You don’t manually launch EC2 instances for worker nodes. Instead, you define 
 
 ---
 
-### Load Balancer Provisioning
-
-EKS integrates tightly with AWS load balancing. When you create a Kubernetes `Service` of type `LoadBalancer`, AWS automatically provisions an:
-
-- **Elastic Load Balancer (ELB)** or **Application Load Balancer (ALB)**, depending on annotations.
-
-You don’t need to configure health checks or backend pools — the Kubernetes **cloud controller manager** handles that. This automation is a hallmark of PaaS: describe the service, and the infrastructure follows.
-
----
-
 ### Autoscaling and Node Management: IaaS Under the Hood
 
 While you don’t manage EC2 instances directly, EKS uses **Auto Scaling Groups (ASGs)** to provision and scale worker nodes. You define:
@@ -73,6 +63,16 @@ AWS then manages:
 - Availability zone-aware scheduling
 
 It’s all backed by traditional IaaS — just orchestrated through Kubernetes abstractions.
+
+---
+
+### Load Balancer Provisioning
+
+EKS integrates tightly with AWS load balancing. When you create a Kubernetes `Service` of type `LoadBalancer`, AWS automatically provisions an:
+
+- **Elastic Load Balancer (ELB)** or **Application Load Balancer (ALB)**, depending on annotations.
+
+You don’t need to configure health checks or backend pools — the Kubernetes **cloud controller manager** handles that. This automation is a hallmark of PaaS: describe the service, and the infrastructure follows.
 
 ---
 
