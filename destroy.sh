@@ -30,6 +30,7 @@ if [ ! -d ".terraform" ]; then
 fi
 
 # Perform Terraform destroy to tear down the EKS cluster
+echo "NOTE: Deleting nginx_ingress."
 terraform destroy -target=helm_release.nginx_ingress  -auto-approve > /dev/null 2> /dev/null
 terraform destroy -auto-approve || { echo "ERROR: Terraform destroy failed. Exiting."; exit 1; }
 
@@ -51,7 +52,6 @@ group_ids=$(aws ec2 describe-security-groups \
 # If no matching groups found, skip deletion logic
 if [ -z "$group_ids" ]; then
   echo "NOTE: No security groups starting with 'k8s' found."
-  exit 0
 fi
 
 # Loop through each security group ID and attempt deletion
