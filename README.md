@@ -6,7 +6,7 @@ Welcome to **Video 1** of the [Kubernetes In the Cloud](https://github.com/mamon
 
 This is a **fully automated deployment** of containerized microservices and web apps with **Amazon EKS (Elastic Kubernetes Service)** — powered by Terraform and shell scripting.
 
-You'll build and deploy:
+We'll build and deploy:
 
 - **A document database-backed microservice** using:  
   - **Amazon DynamoDB** for fast, serverless NoSQL storage.

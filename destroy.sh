@@ -1,72 +1,104 @@
 #!/bin/bash
 
-# Delete Kubernetes deployment
+# ========================================
+# Full Cleanup Script
+# Tears down EKS infrastructure, Kubernetes
+# deployments, ECR repositories, and 
+# supporting Terraform state and security groups.
+# ========================================
+
+# ----------------------------------------
+# Step 1: Delete Kubernetes Deployments
+# Suppress output for stress.yaml and games.yaml
+# flask-app.yaml may not exist; log a warning if delete fails
+# ----------------------------------------
 kubectl delete -f stress.yaml > /dev/null 2> /dev/null
 kubectl delete -f games.yaml > /dev/null 2> /dev/null
 kubectl delete -f flask-app.yaml || {
     echo "WARNING: Failed to delete Kubernetes deployment. It may not exist."
 }
 
-helm uninstall nginx-ingress -n ingress-nginx
+# Uncomment below if Helm-managed NGINX Ingress needs removal
+# helm uninstall nginx-ingress -n ingress-nginx
 
-# Navigate to the EKS setup directory and destroy resources
-cd "03-eks" || { echo "ERROR: Failed to change directory to 04-eks. Exiting."; exit 1; }
+# ----------------------------------------
+# Step 2: Tear Down EKS Terraform Infrastructure
+# ----------------------------------------
+cd "03-eks" || { echo "ERROR: Failed to change directory to 03-eks. Exiting."; exit 1; }
 echo "NOTE: Destroying EKS cluster."
 
-# Initialize Terraform if needed
+# Initialize Terraform if not already initialized
 if [ ! -d ".terraform" ]; then
     terraform init
 fi
 
-# Destroy EKS resources
+# Perform Terraform destroy to tear down the EKS cluster
 terraform destroy -auto-approve || { echo "ERROR: Terraform destroy failed. Exiting."; exit 1; }
 
-# Clean up Terraform-related files
+# Clean up local Terraform state and module cache
 rm -rf terraform* .terraform*
-cd ..
 
-# Get list of all security group IDs where the GroupName starts with "k8s"
+cd ..  # Return to root directory
+
+# ----------------------------------------
+# Step 3: Delete Orphaned Security Groups Named "k8s*"
+# AWS sometimes leaves dangling security groups after EKS deletion
+# ----------------------------------------
+
+# Query AWS for security group IDs where the group name starts with "k8s"
 group_ids=$(aws ec2 describe-security-groups \
   --query "SecurityGroups[?starts_with(GroupName, 'k8s')].GroupId" \
   --output text)
 
+# If no matching groups found, skip deletion logic
 if [ -z "$group_ids" ]; then
   echo "NOTE: No security groups starting with 'k8s' found."
   exit 0
 fi
 
-# Loop through each group ID and attempt deletion
+# Loop through each security group ID and attempt deletion
 for group_id in $group_ids; do
   echo "NOTE: Deleting security group: $group_id"
   aws ec2 delete-security-group --group-id "$group_id"
 
+  # Check if deletion was successful and log accordingly
   if [ $? -eq 0 ]; then
     echo "NOTE: Successfully deleted $group_id"
   else
-    echo "WARNING: Failed to delete $group_id — possibly still in use"
+    echo "WARNING: Failed to delete $group_id — possibly still in use by another resource"
   fi
 done
 
+# ----------------------------------------
+# Step 4: Delete ECR Repositories and All Tagged Images
+# This removes container image repositories completely
+# ----------------------------------------
 echo "NOTE: Deleting ECR repository contents."
 
-# Define ECR repository name
+# Delete Flask app ECR repository with force to also delete all images
 ECR_REPOSITORY_NAME="flask-app"
-
-# Force delete the ECR repository and its contents
 aws ecr delete-repository --repository-name "$ECR_REPOSITORY_NAME" --force || {
     echo "WARNING: Failed to delete ECR repository. It may not exist."
 }
 
-# Force delete the ECR games repository and its contents
+# Delete games repository as well (tetris, breakout, frogger, etc.)
 aws ecr delete-repository --repository-name "games" --force || {
     echo "WARNING: Failed to delete ECR repository. It may not exist."
 }
 
-
-# Navigate to the ECR setup directory and clean up Terraform files
+# ----------------------------------------
+# Step 5: Tear Down ECR Terraform Infrastructure
+# ----------------------------------------
 cd "01-ecr" || { echo "ERROR: Failed to change directory to 01-ecr. Exiting."; exit 1; }
+
+# Destroy ECR Terraform resources (repositories, policies)
 terraform destroy -auto-approve || { echo "ERROR: Terraform destroy failed. Exiting."; exit 1; }
+
+# Clean up local Terraform state and modules
 rm -rf terraform* .terraform*
 cd ..
 
+# ----------------------------------------
+# Step 6: All Cleanup Done
+# ----------------------------------------
 echo "NOTE: Cleanup process completed successfully."
