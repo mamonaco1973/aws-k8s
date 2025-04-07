@@ -18,9 +18,6 @@ kubectl delete -f flask-app.yaml || {
     echo "WARNING: Failed to delete Kubernetes deployment. It may not exist."
 }
 
-# Helm-managed NGINX Ingress needs removal
-helm uninstall nginx-ingress -n ingress-nginx
-
 # ----------------------------------------
 # Step 2: Tear Down EKS Terraform Infrastructure
 # ----------------------------------------
@@ -33,6 +30,7 @@ if [ ! -d ".terraform" ]; then
 fi
 
 # Perform Terraform destroy to tear down the EKS cluster
+terraform destroy -target=helm_release.nginx_ingress  -auto-approve > /dev/null 2> /dev/null
 terraform destroy -auto-approve || { echo "ERROR: Terraform destroy failed. Exiting."; exit 1; }
 
 # Clean up local Terraform state and module cache
