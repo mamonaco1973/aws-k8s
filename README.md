@@ -135,7 +135,6 @@ This diagram shows the AWS infrastructure behind the EKS cluster, with EC2-based
 * [Install Latest Terraform](https://developer.hashicorp.com/terraform/install)
 * [Install Postman](https://www.postman.com/downloads/) for testing
 * [Install Docker](https://docs.docker.com/engine/install/)
-* [Install Helm](https://helm.sh/docs/intro/install/)
 
 If this is your first time watching our content, we recommend starting with this video: [AWS + Terraform: Easy Setup](https://youtu.be/BCMQo0CB9wk). It provides a step-by-step guide to properly configure Terraform, Packer, and the AWS CLI.
 
