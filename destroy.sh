@@ -13,7 +13,7 @@
 # flask-app.yaml may not exist; log a warning if delete fails
 # ----------------------------------------
 kubectl delete -f stress.yaml > /dev/null 2> /dev/null
-kubectl delete -f games.yaml > /dev/null 2> /dev/null
+kubectl delete -f games.yaml 
 kubectl delete -f flask-app.yaml || {
     echo "WARNING: Failed to delete Kubernetes deployment. It may not exist."
 }
