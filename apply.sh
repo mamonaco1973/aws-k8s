@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export AWS_DEFAULT_REGION=us-east-2 
+
 # ========================================
 # Full Pipeline Deployment Script
 # Deploys ECR, builds Docker containers,

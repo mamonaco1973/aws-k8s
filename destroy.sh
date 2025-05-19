@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export AWS_DEFAULT_REGION=us-east-2 
+
 # ========================================
 # Full Cleanup Script
 # Tears down EKS infrastructure, Kubernetes

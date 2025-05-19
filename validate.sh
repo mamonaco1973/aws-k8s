@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export AWS_DEFAULT_REGION=us-east-2 
+
 # ========================================
 # EKS Solution Test Script
 # - Verifies if the EKS cluster exists
