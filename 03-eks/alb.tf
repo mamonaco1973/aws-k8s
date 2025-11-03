@@ -126,7 +126,7 @@ module "load_balancer_controller_irsa" {
 
   create_role  = true
   role_name    = "aws-load-balancer-controller"
-  provider_url = replace(aws_eks_cluster.rstudio_eks.identity[0].oidc[0].issuer, "https://", "")
+  provider_url = replace(aws_eks_cluster.flask_eks.identity[0].oidc[0].issuer, "https://", "")
   role_policy_arns = [
     aws_iam_policy.aws_load_balancer_controller.arn
   ]
