@@ -3,7 +3,7 @@
 ##############################################
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     host = aws_eks_cluster.flask_eks.endpoint
     # The public endpoint URL of the EKS cluster API server. Required for Helm to interact with the cluster.
 
