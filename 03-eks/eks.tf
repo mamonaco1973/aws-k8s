@@ -136,17 +136,41 @@ resource "aws_eks_node_group" "game_nodes" {
     nodegroup = "game-nodes"
   }
 }
-
-# Create an IAM Role for DynamoDB Access using IAM Roles for Service Accounts (IRSA)
+# ==============================================================================
+# IAM Role for DynamoDB Access (IRSA for EKS)
+# ------------------------------------------------------------------------------
+# Creates an IAM role that allows a specific EKS service account to access
+# DynamoDB using IAM Roles for Service Accounts (IRSA).
+# Compatible with terraform-aws-modules/iam/aws v6.2.3
+# ==============================================================================
 
 module "dynamodb_access_irsa" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"  # Reusable module for IAM role creation
+  source  = "terraform-aws-modules/iam/aws"
+  version = "6.2.3"
 
-  create_role                   = true                    # Ensure the IAM role is created
-  role_name                     = "dynamodb-access-role"  # Assign a name to the IAM role
-  provider_url                  = replace(aws_eks_cluster.flask_eks.identity[0].oidc[0].issuer, "https://", "")  # Extract OIDC provider URL for authentication
-  role_policy_arns              = [aws_iam_policy.dynamodb_access.arn]                                           # Attach the necessary IAM policy for DynamoDB access
-  oidc_fully_qualified_subjects = ["system:serviceaccount:default:dynamodb-access-sa"]                           # Restrict role assumption to a specific Kubernetes service account
+  create_role = true
+  role_name   = "dynamodb-access-role"
+
+  # Attach the IAM policy that grants DynamoDB access
+  role_policy_arns = [
+    aws_iam_policy.dynamodb_access.arn
+  ]
+
+  # Define the OIDC provider and service account mapping
+  oidc_providers = {
+    main = {
+      provider_arn = aws_iam_openid_connect_provider.eks.arn
+      namespace_service_accounts = [
+        "default:dynamodb-access-sa"
+      ]
+    }
+  }
+
+  role_description = "IAM role for EKS service account (dynamodb-access-sa) to access DynamoDB"
+  tags = {
+    Project = "aws-k8s-main"
+    Module  = "dynamodb_access_irsa"
+  }
 }
 
 # Retrieve the TLS Certificate for EKS OIDC Provider
