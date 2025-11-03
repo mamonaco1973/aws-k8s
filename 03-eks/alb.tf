@@ -118,31 +118,28 @@ resource "aws_iam_policy" "aws_load_balancer_controller" {
 # ------------------------------------------------------------------------------
 # Creates an IAM role that can be assumed by the AWS Load Balancer Controller
 # running in EKS using OIDC-based IRSA.
-# Compatible with terraform-aws-modules/iam-role/aws v6.x
+# Compatible with terraform-aws-modules/iam/aws v6.2.3
 # ==============================================================================
 
 module "load_balancer_controller_irsa" {
-  source  = "terraform-aws-modules/iam-role/aws"
-  version = "6.1.0"  # latest stable
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "6.2.3"
 
-  name = "aws-load-balancer-controller"
+  role_name = "aws-load-balancer-controller"
 
-  # Attach the IAM policy granting Load Balancer Controller permissions
   role_policy_arns = [
     aws_iam_policy.aws_load_balancer_controller.arn
   ]
 
-  # Define the OIDC provider and service account mapping
   oidc_providers = {
-    main = {
-      provider_arn = aws_iam_openid_connect_provider.eks.arn
+    eks = {
+      provider_arn               = aws_iam_openid_connect_provider.eks.arn
       namespace_service_accounts = [
         "kube-system:aws-load-balancer-controller"
       ]
     }
   }
 
-  description = "IAM role assumed by the AWS Load Balancer Controller via EKS IRSA"
   tags = {
     Project = "aws-k8s-main"
     Module  = "load_balancer_controller_irsa"
