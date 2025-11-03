@@ -139,21 +139,16 @@ resource "aws_eks_node_group" "game_nodes" {
 # ==============================================================================
 # IAM Role for DynamoDB Access (IRSA for EKS)
 # ------------------------------------------------------------------------------
-# Creates an IAM role that allows a specific EKS service account to access
-# DynamoDB using IAM Roles for Service Accounts (IRSA).
-# Compatible with terraform-aws-modules/iam/aws v6.2.3
+# Correct for terraform-aws-modules/iam/aws v6.2.3
 # ==============================================================================
 
-# ==============================================================================
-# IAM Role for DynamoDB Access (IRSA for EKS) - v6.2.3
-# ==============================================================================
 module "dynamodb_access_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "6.2.3"
 
-  name = "dynamodb-access-role"
+  role_name = "dynamodb-access-role"
 
-  policy_arns = [
+  role_policy_arns = [
     aws_iam_policy.dynamodb_access.arn
   ]
 
@@ -169,7 +164,6 @@ module "dynamodb_access_irsa" {
     Module  = "dynamodb_access_irsa"
   }
 }
-
 
 # Retrieve the TLS Certificate for EKS OIDC Provider
 # This ensures secure authentication for OIDC-based IAM roles

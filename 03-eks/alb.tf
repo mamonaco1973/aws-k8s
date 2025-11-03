@@ -120,13 +120,17 @@ resource "aws_iam_policy" "aws_load_balancer_controller" {
 # running in EKS using OIDC-based IRSA.
 # Compatible with terraform-aws-modules/iam/aws v6.2.3
 # ==============================================================================
+# ==============================================================================
+# IAM Role for AWS Load Balancer Controller (IRSA for EKS)
+# ==============================================================================
+
 module "load_balancer_controller_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "6.2.3"
 
-  name = "aws-load-balancer-controller"
+  role_name = "aws-load-balancer-controller"
 
-  policy_arns = [
+  role_policy_arns = [
     aws_iam_policy.aws_load_balancer_controller.arn
   ]
 
@@ -142,4 +146,5 @@ module "load_balancer_controller_irsa" {
     Module  = "load_balancer_controller_irsa"
   }
 }
+
 
