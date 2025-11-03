@@ -153,7 +153,7 @@ module "dynamodb_access_irsa" {
 
   name = "dynamodb-access-role"
 
-  role_policy_arns = [
+  policy_arns = [
     aws_iam_policy.dynamodb_access.arn
   ]
 

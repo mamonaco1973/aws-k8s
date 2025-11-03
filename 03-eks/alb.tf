@@ -126,7 +126,7 @@ module "load_balancer_controller_irsa" {
 
   name = "aws-load-balancer-controller"
 
-  role_policy_arns = [
+  policy_arns = [
     aws_iam_policy.aws_load_balancer_controller.arn
   ]
 
