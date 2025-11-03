@@ -141,22 +141,21 @@ resource "aws_eks_node_group" "game_nodes" {
 # ------------------------------------------------------------------------------
 # Creates an IAM role that allows a specific EKS service account to access
 # DynamoDB using IAM Roles for Service Accounts (IRSA).
-# Compatible with terraform-aws-modules/iam/aws v6.2.3
+# Compatible with terraform-aws-modules/iam-role/aws v6.x
 # ==============================================================================
 
 module "dynamodb_access_irsa" {
-  source  = "terraform-aws-modules/iam/aws"
-  version = "6.2.3"
+  source  = "terraform-aws-modules/iam-role/aws"
+  version = "6.1.0"  # latest stable as of 2025
 
-  create_role = true
-  role_name   = "dynamodb-access-role"
+  name = "dynamodb-access-role"
 
   # Attach the IAM policy that grants DynamoDB access
   role_policy_arns = [
     aws_iam_policy.dynamodb_access.arn
   ]
 
-  # Define the OIDC provider and service account mapping
+  # Define the OIDC trust relationship for IRSA
   oidc_providers = {
     main = {
       provider_arn = aws_iam_openid_connect_provider.eks.arn
@@ -166,7 +165,7 @@ module "dynamodb_access_irsa" {
     }
   }
 
-  role_description = "IAM role for EKS service account (dynamodb-access-sa) to access DynamoDB"
+  description = "IAM role for EKS service account (dynamodb-access-sa) to access DynamoDB"
   tags = {
     Project = "aws-k8s-main"
     Module  = "dynamodb_access_irsa"

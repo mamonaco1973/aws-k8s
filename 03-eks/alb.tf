@@ -80,6 +80,7 @@ resource "aws_iam_policy" "aws_load_balancer_controller" {
           "elasticloadbalancing:DeleteLoadBalancerListeners",
           "elasticloadbalancing:ModifyLoadBalancerAttributes",
           "cognito-idp:DescribeUserPoolClient",
+          "ec2:DescribeRouteTables",
           "acm:ListCertificates",
           "acm:DescribeCertificate",
           "acm:RequestCertificate",
@@ -117,15 +118,14 @@ resource "aws_iam_policy" "aws_load_balancer_controller" {
 # ------------------------------------------------------------------------------
 # Creates an IAM role that can be assumed by the AWS Load Balancer Controller
 # running in EKS using OIDC-based IRSA.
-# Compatible with terraform-aws-modules/iam/aws v6.2.3
+# Compatible with terraform-aws-modules/iam-role/aws v6.x
 # ==============================================================================
 
 module "load_balancer_controller_irsa" {
-  source  = "terraform-aws-modules/iam/aws"
-  version = "6.2.3"
+  source  = "terraform-aws-modules/iam-role/aws"
+  version = "6.1.0"  # latest stable
 
-  create_role = true
-  role_name   = "aws-load-balancer-controller"
+  name = "aws-load-balancer-controller"
 
   # Attach the IAM policy granting Load Balancer Controller permissions
   role_policy_arns = [
@@ -142,7 +142,7 @@ module "load_balancer_controller_irsa" {
     }
   }
 
-  role_description = "IAM role assumed by the AWS Load Balancer Controller via EKS IRSA"
+  description = "IAM role assumed by the AWS Load Balancer Controller via EKS IRSA"
   tags = {
     Project = "aws-k8s-main"
     Module  = "load_balancer_controller_irsa"
