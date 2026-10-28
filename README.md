@@ -1,336 +1,156 @@
-# Containerizing Applications with Amazon EKS (Elastic Kubernetes Service)
+# Kubernetes on AWS: Amazon EKS with NGINX Ingress, ECR and DynamoDB
 
-Welcome to **Video 1** of the [Kubernetes In the Cloud](https://github.com/mamonaco1973/cloud-k8s-intro/blob/main/README.md) series.
+Video 1 of the [Kubernetes in the Cloud](https://github.com/mamonaco1973/cloud-k8s-intro/blob/main/README.md)
+series. The candidate microservice from
+[AWS Auto Scaling](https://github.com/mamonaco1973/aws-flask-asg) and
+[Simple AWS Containers](https://github.com/mamonaco1973/aws-flask-container)
+runs here on **Amazon EKS**, next to three browser games (Tetris, Frogger and
+Breakout). Images live in **ECR**, the Flask pods store candidates in
+**DynamoDB** through IAM Roles for Service Accounts, and an **NGINX ingress
+controller** behind one load balancer routes to everything. Terraform builds
+the infrastructure and the add-ons; `kubectl` deploys the apps.
 
-**This video complements the [AWS AutoScaling](https://github.com/mamonaco1973/aws-flask-asg/blob/main/README.md) and the [Simple AWS Containers](https://github.com/mamonaco1973/aws-flask-container/blob/main/README.md) projects**, where we deployed a simple Python-based microservice using the Flask framework with different cloud services.
+![Tour of the build in the AWS console](diagrams/consoles.gif)
 
-This is a **fully automated deployment** of containerized microservices and web apps with **Amazon EKS (Elastic Kubernetes Service)** — powered by Terraform and shell scripting.
+| Piece | Where | Role |
+|---|---|---|
+| **VPC** | `10.0.0.0/24`, us-east-2 | two public and two private `/26` subnets in `us-east-2a` and `us-east-2b`; a NAT gateway for the private subnets |
+| **flask-eks-cluster** | EKS | managed control plane; an OIDC provider for IRSA |
+| **flask-nodes** | node group, private subnets | `t3.medium`, 1 to 4 nodes (scaled by the cluster autoscaler); runs `flask-app` |
+| **game-nodes** | node group, private subnets | `t3.medium`, 1 node; runs the games in the `games` namespace |
+| **Add-ons** | Helm, `kube-system` / `ingress-nginx` | AWS Load Balancer Controller, cluster autoscaler (chart 9.29.1) and the NGINX ingress controller |
+| **nginx-ingress-lb** | public subnets | internet-facing load balancer for the NGINX controller, preserving client IPs |
+| **flask-app** | Deployment | 2 replicas, scaled 2 to 5 by an HPA at 60% CPU; `/gtg` liveness and readiness probes; service account `dynamodb-access-sa` |
+| **tetris**, **frogger**, **breakout** | Deployments, `games` | one replica each |
+| **Candidates** | DynamoDB | keyed on `CandidateName`; TTL on `TimeToExist` |
+| **flask-app**, **games** | ECR | the images, tagged `flask-app-rc1` and `tetris-rc1` / `frogger-rc1` / `breakout-rc1` |
 
-We'll build and deploy:
+## Architecture
 
-- **A document database-backed microservice** using:  
-  - **Amazon DynamoDB** for fast, serverless NoSQL storage.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="architecture-dark.svg">
+  <img alt="Requests from the internet reach nginx-ingress-lb, an internet-facing load balancer in the public subnets, which forwards to the NGINX ingress controller in the flask-eks-cluster EKS cluster in us-east-2. The ingress routes /flask-app/api to two to five Flask pods on the flask-nodes group (t3.medium, one to four nodes) and /games paths to the Tetris, Frogger and Breakout pods on the single-node game-nodes group. The Flask pods read and write the Candidates DynamoDB table through the dynamodb-access-sa service account (IRSA). The cluster autoscaler scales the Flask node group and the AWS Load Balancer Controller manages the load balancer. Both node groups pull images from ECR." src="architecture-light.svg">
+</picture>
 
-- **A Docker container** for the Flask microservice, optimized for deployment to **Amazon EKS**.
+Regenerate with `python3 make_diagram.py`.
 
-- **Additional standalone Docker containers** that run classic JavaScript games like **[Tetris](https://gist.github.com/straker/3c98304f8a6a9174efd8292800891ea1)**, **[Frogger](https://gist.github.com/straker/82a4368849cbd441b05bd6a044f2b2d3)**, and **[Breakout](https://gist.github.com/straker/98a2aed6a7686d26c04810f08bfaf66b)**.
+- **`01-ecr/`**: the VPC, subnets and NAT gateway, and both ECR
+  repositories.
+- **`02-docker/`**: the Flask app and the three games, each with its
+  `Dockerfile`, plus the `test_candidates.py` smoke test.
+- **`03-eks/`**: the cluster and node groups (`eks.tf`), the DynamoDB table,
+  the IAM roles for the add-ons and for `dynamodb-access-sa`, the Helm
+  releases, and the manifest templates in `yaml/`.
+- **`stress.yaml`**: a CPU load generator for the autoscaling test.
 
-- **Cloud-native container registry workflows**, pushing all images to:  
-  - **Amazon ECR (Elastic Container Registry)**.
+## Endpoints
 
-- **Kubernetes workloads on Amazon EKS**, managing containerized applications at scale.
+| Path | Returns |
+|---|---|
+| `GET /flask-app/api/gtg` | 200; with `?details=true`, connection details |
+| `GET /flask-app/api/<name>` | the candidate, or 404 |
+| `POST /flask-app/api/<name>` | `{"CandidateName": <name>}`, or 500 |
+| `GET /flask-app/api/candidates` | every candidate, or 404 |
+| `GET /games/tetris` | Tetris |
+| `GET /games/frogger` | Frogger |
+| `GET /games/breakout` | Breakout |
 
-- **Kubernetes manifests** including **Deployments**, **Services**, and **Ingress** resources for scalable, fault-tolerant workloads.
+The games are [Tetris](https://gist.github.com/straker/3c98304f8a6a9174efd8292800891ea1),
+[Frogger](https://gist.github.com/straker/82a4368849cbd441b05bd6a044f2b2d3)
+and [Breakout](https://gist.github.com/straker/98a2aed6a7686d26c04810f08bfaf66b)
+by Steven Lambert, served by NGINX.
 
-- **NGINX as a unified Ingress controller**, exposing all services and games behind a single **AWS Load Balancer**.
-
-## Is Amazon EKS PaaS or IaaS?
-
-When deploying Kubernetes with **Amazon Elastic Kubernetes Service (EKS)**, you might ask:
-
-> Is EKS considered Infrastructure as a Service (IaaS) or Platform as a Service (PaaS)?
-
-EKS lets you define compute and scaling options — that sounds like IaaS. But it also manages the Kubernetes control plane, automates provisioning, and abstracts away much of the operational overhead — which leans toward PaaS.
-
-The best answer: **EKS delivers a PaaS-like experience built on IaaS foundations**. It blends declarative APIs with AWS-native infrastructure provisioning.
-
----
-
-### Managed Control Plane, Declarative Infrastructure
-
-With **EKS**, you never install or operate the Kubernetes control plane. AWS handles all of that for you — including:
-
-- Control plane availability and scaling
-- Version upgrades and patching
-- Integrated monitoring and security
-
-You don’t manually launch EC2 instances for worker nodes. Instead, you define node group settings, and AWS provisions the necessary compute infrastructure for you — all through a **declarative, hands-off experience** that feels like PaaS.
-
----
-
-### Autoscaling and Node Management: IaaS Under the Hood
-
-While you don’t manage EC2 instances directly, EKS uses **Auto Scaling Groups (ASGs)** to provision and scale worker nodes. You define:
-
-- Node group instance types and sizes  
-- Minimum and maximum counts  
-- Auto-scaling behavior based on cluster metrics
-
-AWS then manages:
-
-- VM provisioning and health checks  
-- Auto-repair and rolling updates  
-- Availability zone-aware scheduling
-
-It’s all backed by traditional IaaS — just orchestrated through Kubernetes abstractions.
-
----
-
-### Load Balancer Provisioning
-
-EKS integrates tightly with AWS load balancing. When you create a Kubernetes `Service` of type `LoadBalancer`, AWS automatically provisions an:
-
-- **Elastic Load Balancer (ELB)** or **Application Load Balancer (ALB)**, depending on annotations.
-
-You don’t need to configure health checks or backend pools — the Kubernetes **cloud controller manager** handles that. This automation is a hallmark of PaaS: describe the service, and the infrastructure follows.
-
----
-
-### Tagging: The Glue Behind the Scenes
-
-Amazon EKS uses **resource tagging** extensively to manage cluster components:
-
-- Tags on subnets tell EKS which networks to use for node placement.
-- Tags on EC2 instances help the Kubernetes autoscaler track and scale node groups.
-- Tags on ELBs and security groups tie resources back to the cluster.
-
-You rarely touch these tags yourself — but they’re essential for EKS to operate in a cloud-native, automated way.
-
----
-
-### Conclusion
-
-**Amazon EKS delivers a managed Kubernetes experience that blends PaaS simplicity with IaaS flexibility**:
-
-- You don’t install or manage the control plane.
-- You define infrastructure declaratively.
-- AWS provisions and maintains the underlying EC2-based compute.
-
-Compared to fully abstracted services like **AWS RDS** or **Managed Microsoft AD**, EKS strikes a balance — offering control when you need it, and automation when you don’t.
-
-## AWS Solution
-
-The **EKS solution we are building** consists of a fully managed **Amazon EKS cluster** deployed in the `us-east-2` region.
-
-It includes:
-
-- A fully managed **control plane** provided by AWS
-- Two distinct **node groups**:
-  - `flask-app` for running the Flask-based microservice
-  - `games` for hosting classic JavaScript games like Tetris
-
-Within the cluster, **pods** run containerized applications such as `flask-app-1` and `tetris`, each isolated and scalable.
-
-The solution integrates tightly with essential AWS services:
-
-- **Amazon VPC** for secure, cloud-native networking
-- **Amazon ECR** for storing and managing Docker container images
-- **Amazon DynamoDB** for fast, serverless NoSQL data storage
-- An external **Elastic Load Balancer** for distributing incoming traffic
-- An **NGINX Ingress Controller** for routing traffic to individual services within the cluster
-
-All infrastructure is defined using **Terraform**, while application deployment and management are performed using `kubectl`.
-
-
-![eks](./diagrams/aws-k8s.drawio.png)
-
-This diagram shows the AWS infrastructure behind the EKS cluster, with EC2-based node groups in private subnets, a Network Load Balancer for internet traffic, and connected services like DynamoDB and Elastic Container Registry.
-
-![eks-infra](./diagrams/aws-k8s-infra.drawio.png)
+| Tetris | Frogger | Breakout |
+|---|---|---|
+| ![Tetris](diagrams/tetris.png) | ![Frogger](diagrams/frogger.png) | ![Breakout](diagrams/breakout.png) |
 
 ## Prerequisites
 
 * [An AWS Account](https://aws.amazon.com/console/)
-* [Install AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) 
-* [Install Latest Terraform](https://developer.hashicorp.com/terraform/install)
-* [Install Postman](https://www.postman.com/downloads/) for testing
+* [Install AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+* [Install Terraform](https://developer.hashicorp.com/terraform/install)
 * [Install Docker](https://docs.docker.com/engine/install/)
+* [Install kubectl](https://kubernetes.io/docs/tasks/tools/)
 
-If this is your first time watching our content, we recommend starting with this video: [AWS + Terraform: Easy Setup](https://youtu.be/BCMQo0CB9wk). It provides a step-by-step guide to properly configure Terraform, Packer, and the AWS CLI.
+If this is your first time watching our content, we recommend starting with
+this video: [AWS + Terraform: Easy Setup](https://youtu.be/BCMQo0CB9wk).
 
-## Download this Repository
+## Deploy
 
 ```bash
 git clone https://github.com/mamonaco1973/aws-k8s.git
 cd aws-k8s
+./apply.sh
 ```
-## Build the Code
 
-Run [check_env](check_env.sh) then run [apply](apply.sh).
+`apply.sh`:
+
+1. Applies **`01-ecr`** (network and repositories).
+2. Builds the Flask image and the three game images and pushes them to ECR.
+3. Applies **`03-eks`**: the cluster, both node groups, the table, the roles
+   and the three Helm releases.
+4. Points `kubectl` at the cluster and applies `flask-app.yaml` and
+   `games.yaml`, rendered from their templates with your account ID.
+
+It ends by running `validate.sh`, which waits for the ingress to get a load
+balancer hostname and for `/flask-app/api/gtg` to answer, then runs the
+smoke test:
+
+```
+NOTE: URL for EKS Solution is http://nginx-ingress-lb-<id>.elb.us-east-2.amazonaws.com/flask-app/api/gtg?details=true
+✓ good to go passed
+✓ insert passed
+✓ verification passed
+✓ candidate list passed
+```
+
+## Try it
+
+1. Open `http://<load balancer hostname>/games/tetris` (or `frogger`,
+   `breakout`) in a browser, and call the Flask API with `curl` or Postman.
+2. Check the workloads:
+
+   ```bash
+   kubectl get pods,deployments,ingress
+   kubectl get pods,deployments,ingress -n games
+   kubectl get nodes
+   ```
+
+3. Test autoscaling. `stress.yaml` runs 4 replicas of `vish/stress`, each
+   asking for 2 CPUs, on the Flask node group:
+
+   ```bash
+   kubectl apply -f stress.yaml
+   # wait about 5 minutes
+   kubectl get nodes          # the flask-nodes group grows, up to 4 nodes
+   kubectl delete -f stress.yaml
+   # wait about 5 minutes
+   kubectl get nodes          # and shrinks back
+   ```
+
+## Teardown
 
 ```bash
-~/aws-k8s$ ./apply.sh
-NOTE: Validating that required commands are found in your PATH.
-NOTE: aws is found in the current PATH.
-NOTE: docker is found in the current PATH.
-NOTE: terraform is found in the current PATH.
-NOTE: All required commands are available.
-NOTE: Checking AWS cli connection.
-NOTE: Successfully logged into AWS.
-NOTE: Building ECR Instance.
-Initializing the backend...
-Initializing provider plugins...
-- Finding latest version of hashicorp/aws...
-[...]
+./destroy.sh
 ```
 
-### **Build Process Overview**
+`destroy.sh` deletes the stress test and both manifests first, so the
+ingress's load balancer goes away before Terraform destroys the NGINX
+release and then the rest of `03-eks`, and finally `01-ecr`.
 
-The build process is organized into four phases:
+## Is EKS PaaS or IaaS?
 
-#### 1. Provision ECR Repositories and VPC
-- Creates **Amazon Elastic Container Registry (ECR)** repositories for storing container images.
-- Sets up the **Amazon VPC** and networking infrastructure required for the EKS cluster.
+Both, in layers. You never install or run the Kubernetes control plane; AWS
+operates, scales and patches it, and you describe node groups instead of
+launching instances, which feels like PaaS. Underneath, node groups are EC2
+Auto Scaling groups, the cluster autoscaler changes their sizes, and a
+`Service` of type `LoadBalancer` becomes a real AWS load balancer. Tags on
+subnets, instances and load balancers tie it all back to the cluster. EKS
+sits between fully managed services such as RDS and plain EC2: control when
+you want it, automation when you don't.
 
-#### 2. Build and Push Docker Images
-- Builds Docker images for the **Flask microservice** and three **JavaScript game apps** (Tetris, Frogger, Breakout).
-- Pushes all images to their respective **ECR repositories**.
+## Notes
 
-#### 3. Provision Amazon EKS Cluster
-- Deploys the **Amazon EKS cluster** with two managed node groups:
-  - `flask-nodes` for the Flask microservice
-  - `game-nodes` for the game containers
-
-#### 4. Deploy Applications Using `kubectl`
-- Connects `kubectl` to the newly created EKS cluster.
-- Applies Kubernetes manifests:
-  - [flask-app.yaml](./03-eks/yaml/flask-app.yaml.tmpl) for the microservice  
-  - [games.yaml](./03-eks/yaml/games.yaml.tmpl) for the game containers
-
-## Tour of Build Output in the AWS Console
-
-![consoles](./diagrams/consoles.gif)
-
-## Service Endpoint Summary
-
-### `/flask-app/api/gtg` (GET)
-- **Purpose**: Health check.
-- **Response**: 
-  - `{"connected": "true", "instance-id": <instance_id>}` (if `details` query parameter is provided).
-  - 200 OK with no body otherwise.
-
-### `/flask-app/api/<name>` (GET)
-- **Purpose**: Retrieve a candidate by name.
-- **Response**: 
-  - Candidate details (JSON) with status `200`.
-  - `"Not Found"` with status `404` if no candidate is found.
-
-### `/flask-app/api/<name>` (POST)
-- **Purpose**: Add or update a candidate by name.
-- **Response**: 
-  - `{"CandidateName": <name>}` with status `200`.
-  - `"Unable to update"` with status `500` on failure.
-
-### `/flask-app/api/candidates` (GET)
-- **Purpose**: Retrieve all candidates.
-- **Response**: 
-  - List of candidates (JSON) with status `200`.
-  - `"Not Found"` with status `404` if no candidates exist.
-
-### `/games/tetris` (GET)
- - **Purpose**: Loads javascript tetris game for usage in a Web Browser.
-
-      ![eks](./diagrams/tetris.png)
-
-### `/games/frogger` (GET)
- - **Purpose**: Loads javascript frogger game for usage in a Web Browser.
-
-      ![eks](./diagrams/frogger.png)
-
-### `/games/breakout` (GET)
- - **Purpose**: Loads javascript breakout game for usage in a Web Browser.
-
-      ![eks](./diagrams/breakout.png)
-
-## Kubernetes Cluster Validation and Autoscaling Test
-
-This guide walks through validating your Kubernetes cluster with `kubectl` and testing autoscaling behavior using a simple stress test.
-
----
-
-### Step 1: Validate Pod Deployments
-
-Start by listing the current pods in the default namespace:
-
-```bash
-kubectl get pods
-```
-
-Then check for any applications deployed in the custom `games` namespace:
-
-```bash
-kubectl get pods -n games
-```
-
----
-
-### Step 2: Check Deployment Health
-
-Verify the `Deployment` resources:
-
-```bash
-kubectl get deployments
-kubectl get deployments -n games
-```
-
----
-
-### Step 3: Confirm Ingress Setup
-
-Check the Ingress resources in both namespaces:
-
-```bash
-kubectl get ingress
-kubectl get ingress -n games
-```
-
----
-
-### Step 4: Check Node Availability
-
-List the current nodes in your cluster:
-
-```bash
-kubectl get nodes
-```
-
----
-
-### Step 5: Simulate Load with a Stress Test
-
-Apply a resource-intensive workload:
-
-```bash
-kubectl apply -f stress.yaml
-```
-
-⏱️ **Wait ~5 minutes** to allow autoscaling to respond.
-
-Then check the nodes again:
-
-```bash
-kubectl get nodes
-```
-
----
-
-### Step 6: Clean Up the Load Generator
-
-Remove the stress workload:
-
-```bash
-kubectl delete -f stress.yaml
-```
-
-⏱️ **Wait ~5 minutes** for the cluster to scale back down.
-
-Check node status again:
-
-```bash
-kubectl get nodes
-```
-
----
-
-### Summary
-
-This process validates:
-
-- Pod and deployment readiness
-- Ingress configuration
-- Node availability and autoscaler behavior
-
-
-
-
-
+- **Lab only.** The API and games are open to the internet over plain HTTP.
+- Image tags are fixed (`*-rc1`) and the repositories are mutable, so a
+  rebuild overwrites the same tag.
